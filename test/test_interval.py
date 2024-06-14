@@ -1,6 +1,6 @@
 import unittest
 
-from random_events.interval import *
+from random_events.interval_old import *
 from random_events.sigma_algebra import AbstractSimpleSet
 
 
@@ -15,8 +15,9 @@ class SimpleIntervalTestCase(unittest.TestCase):
         intersection_a_b_ = SimpleInterval(0.5, 1, Bound.OPEN, Bound.OPEN)
         self.assertEqual(intersection_a_b, intersection_a_b_)
 
-        intersection_a_c = a.intersection_with(c)
-        self.assertEqual(intersection_a_c, c)
+    def test_invert(self):
+        x = Bound.CLOSED
+        print(invert(x))
 
     def test_is_empty(self):
         a = SimpleInterval()

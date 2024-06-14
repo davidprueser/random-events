@@ -1,7 +1,7 @@
 import unittest
 
 from random_events.variable import *
-from random_events.interval import *
+from random_events.interval_old import *
 
 
 class TestEnum(SetElement):

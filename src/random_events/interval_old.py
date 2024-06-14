@@ -3,6 +3,7 @@ import enum
 from dataclasses import dataclass
 from typing import Dict, Any
 
+import cython
 from sortedcontainers import SortedSet
 from typing_extensions import Self
 
