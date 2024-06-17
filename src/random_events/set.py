@@ -4,7 +4,7 @@ import enum
 from sortedcontainers import SortedSet
 from typing_extensions import Self, TYPE_CHECKING, Dict, Any
 
-from .sigma_algebra import *
+from .sigma_algebra_old import *
 
 
 class SetElement(AbstractSimpleSet, int, enum.Enum):

@@ -2,7 +2,7 @@ from random_events.set import SetElement, Set
 import enum
 import unittest
 
-from random_events.sigma_algebra import AbstractSimpleSet
+from random_events.sigma_algebra_old import AbstractSimpleSet
 
 
 class TestEnum(SetElement):

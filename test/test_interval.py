@@ -1,7 +1,7 @@
 import unittest
 
 from random_events.interval_old import *
-from random_events.sigma_algebra import AbstractSimpleSet
+from random_events.sigma_algebra_old import AbstractSimpleSet
 
 
 class SimpleIntervalTestCase(unittest.TestCase):

@@ -7,8 +7,8 @@ import cython
 from sortedcontainers import SortedSet
 from typing_extensions import Self
 
-from . import sigma_algebra
-from .sigma_algebra import AbstractCompositeSet
+from . import sigma_algebra_old
+from .sigma_algebra_old import AbstractCompositeSet
 
 
 class Bound(enum.Enum):
@@ -40,7 +40,7 @@ class Bound(enum.Enum):
 
 
 @dataclass
-class SimpleInterval(sigma_algebra.AbstractSimpleSet):
+class SimpleInterval(sigma_algebra_old.AbstractSimpleSet):
     """
     Represents a simple interval.
     """
@@ -147,10 +147,10 @@ class SimpleInterval(sigma_algebra.AbstractSimpleSet):
         return f'{left_bracket}{self.lower}, {self.upper}{right_bracket}'
 
     def __repr__(self):
-        return sigma_algebra.AbstractSimpleSet.to_string(self)
+        return sigma_algebra_old.AbstractSimpleSet.to_string(self)
 
     def __str__(self):
-        return sigma_algebra.AbstractSimpleSet.to_string(self)
+        return sigma_algebra_old.AbstractSimpleSet.to_string(self)
 
     def to_json(self) -> Dict[str, Any]:
         return {**super().to_json(), 'lower': self.lower, 'upper': self.upper, 'left': self.left.name,
@@ -167,7 +167,7 @@ class SimpleInterval(sigma_algebra.AbstractSimpleSet):
         return ((self.lower + self.upper) / 2) + self.lower
 
 
-class Interval(sigma_algebra.AbstractCompositeSet):
+class Interval(sigma_algebra_old.AbstractCompositeSet):
     simple_sets: SortedSet[SimpleInterval]
 
     def simplify(self) -> Self:
