@@ -1,61 +1,39 @@
 from __future__ import annotations
-from enum import Enum
 from dataclasses import dataclass
-from typing import Dict, Any
+from enum import Enum
 
-from sortedcontainers import SortedSet
-from typing_extensions import Self
+from libc.stdio cimport printf
 
-# from sigma_algebra import AbstractCompositeSet
-
-cpdef enum Bound:
-    CLOSED = 0
-    OPEN = 1
-
-cpdef Bound invert(self):
-    return Bound.CLOSED if self == Bound.OPEN else Bound.OPEN
-
-cpdef Bound intersect(first: Bound, second: Bound):
+class Bound(Enum):
     """
-    Intersect with another border
-
-    :param first: The first border
-    :param second: The other border
-    :return: The intersection of the two borders
+    Represents the bound of an interval.
     """
-    return Bound.OPEN if first == Bound.OPEN or second == Bound.OPEN else Bound.CLOSED
+    OPEN = 0
+    CLOSED = 1
+
+    def invert(self):
+        return Bound.CLOSED if self == Bound.OPEN else Bound.OPEN
+
+    def intersect(self, second: Bound):
+        """
+        Intersect with another border
+
+        :param second: The other border
+        :return: The intersection of the two borders
+        """
+        return Bound.OPEN if self == Bound.OPEN or second == Bound.OPEN else Bound.CLOSED
 
 
 @dataclass
-cdef class SimpleInterval:
+cdef class SimpleInterval(AbstractSimpleSet):
     """
     Represents a simple interval.
     """
 
-    cdef public lower
-    """
-    The lower bound of the interval.
-    """
-
-    cdef public upper
-    """
-    The upper bound of the interval.
-    """
-
-    left: Bound = Bound.OPEN
-    """
-    The bound type of the lower bound.
-    """
-
-    right: Bound = Bound.OPEN
-    """
-    The bound type of the upper bound.
-    """
-
-    cpdef __hash__(self):
+    def __hash__(self):
         return hash((self.lower, self.upper, self.left, self.right))
 
-    def __lt__(self, other: Self):
+    def __lt__(self, SimpleInterval other):
         if self.lower == other.lower:
             return self.upper < other.upper
         return self.lower < other.lower
@@ -66,20 +44,20 @@ cdef class SimpleInterval:
     # def __str__(self):
     #     return AbstractSimpleSet.to_string(self)
 
-    # cpdef Interval as_composite_set(self):
-    #     return Interval(self)
+    cpdef Interval as_composite_set(self):
+        return Interval(self)
 
     cpdef bint is_empty(self) except *:
         return self.lower > self.upper or (
                 self.lower == self.upper and (self.left == Bound.OPEN or self.right == Bound.OPEN))
 
-    cpdef bint is_singleton(self):
+    cpdef bint is_singleton(self) except *:
         """
         :return: True if the interval is a singleton (contains only one value), False otherwise.
         """
         return self.lower == self.upper and self.left == Bound.CLOSED and self.right == Bound.CLOSED
 
-    cpdef SimpleInterval intersection_with(self, SimpleInterval other):
+    cpdef AbstractSimpleSet intersection_with(self, AbstractSimpleSet other):
 
         # create new limits for the intersection
         cdef float new_lower = max(self.lower, other.lower)
@@ -91,53 +69,54 @@ cdef class SimpleInterval:
 
         # create the new left bound
         if self.lower == other.lower:
-            new_left: Bound = intersect(self.left, other.left)
+            new_left: Bound = self.left.intersect(other.left)
         else:
             new_left: Bound = self.left if self.lower > other.lower else other.left
 
         # create the new right bound
         if self.upper == other.upper:
-            new_right: Bound = intersect(self.right, other.right)
+            new_right: Bound = self.right.intersect(other.right)
         else:
             new_right: Bound = self.right if self.upper < other.upper else other.right
 
         return SimpleInterval(new_lower, new_upper, new_left, new_right)
 
-    # cpdef SortedSet complement(self):
-    #
-    #     # if the interval is empty
-    #     if self.is_empty():
-    #         # return the real line
-    #         return SortedSet([SimpleInterval(float('-inf'), float('inf'), Bound.OPEN, Bound.OPEN)])
-    #
-    #     # initialize the result
-    #     result = SortedSet()
-    #
-    #     # if this is the real line
-    #     if self.lower == float('-inf') and self.upper == float('inf'):
-    #         # return the empty set
-    #         return result
-    #
-    #     # if the lower bound is not negative infinity
-    #     if self.lower > float('-inf'):
-    #         # add the interval from minus infinity to the lower bound
-    #         result.add(SimpleInterval(float('-inf'), self.lower, Bound.OPEN, invert(self.left)))
-    #
-    #     # if the upper bound is not positive infinity
-    #     if self.upper < float('inf'):
-    #         # add the interval from the upper bound to infinity
-    #         result.add(SimpleInterval(self.upper, float('inf'), invert(self.right), Bound.OPEN))
-    #
-    #     return result
+    cpdef complement(self):
+
+        # if the interval is empty
+        if self.is_empty():
+            # return the real line
+            return OrderedSet([SimpleInterval(float('-inf'), float('inf'), Bound.OPEN, Bound.OPEN)])
+
+        # initialize the result
+        result = OrderedSet([])
+
+        # if this is the real line
+        if self.lower == float('-inf') and self.upper == float('inf'):
+            # return the empty set
+            return result
+
+        # if the lower bound is not negative infinity
+        if self.lower > float('-inf'):
+            # add the interval from minus infinity to the lower bound
+            result.add(SimpleInterval(float('-inf'), self.lower, Bound.OPEN, self.left.invert()))
+
+        # if the upper bound is not positive infinity
+        if self.upper < float('inf'):
+            # add the interval from the upper bound to infinity
+            result.add(SimpleInterval(self.upper, float('inf'), self.right.invert(), Bound.OPEN))
+
+        return result
 
     cpdef bint contains(self, float item) except *:
         return (self.lower < item < self.upper or (self.lower == item and self.left == Bound.CLOSED) or (
                 self.upper == item and self.right == Bound.CLOSED))
 
-    # cpdef str non_empty_to_string(self):
-    #     left_bracket: str = '[' if self.left == Bound.CLOSED else '('
-    #     right_bracket: str = ']' if self.right == Bound.CLOSED else ')'
-    #     return f'{left_bracket}{self.lower}, {self.upper}{right_bracket}'
+    cpdef str non_empty_to_string(self):
+        cdef char *left_bracket = '[' if self.left == Bound.CLOSED else '('
+        cdef char *right_bracket = ']' if self.right == Bound.CLOSED else ')'
+        formatted_string = printf("%s%f, %f%s", left_bracket, self.lower, self.upper, right_bracket)
+        return formatted_string
 
     # cpdef Dict[str, Any] to_json(self):
     #     return {**super().to_json(), 'lower': self.lower, 'upper': self.upper, 'left': self.left.name,
@@ -154,8 +133,7 @@ cdef class SimpleInterval:
         return ((self.lower + self.upper) / 2) + self.lower
 
 
-cdef class Interval:
-    simple_sets: SortedSet[SimpleInterval]
+cdef class Interval(AbstractCompositeSet):
 
     cpdef Interval simplify(self):
 
@@ -164,13 +142,13 @@ cdef class Interval:
             return self
 
         # initialize the result
-        cdef Interval result = self.simple_sets[0].as_composite_set()
+        result = self.simple_sets[0].as_composite_set()
 
         # iterate over the simple sets
         for current_simple_interval in self.simple_sets[1:]:
 
             # get the last element in the result
-            last_simple_interval: SortedSet[SimpleInterval] = result.simple_sets[-1]
+            last_simple_interval : OrderedSet[SimpleInterval] = result.simple_sets[-1]
 
             # if the borders are connected
             if (last_simple_interval.upper > current_simple_interval.lower or (

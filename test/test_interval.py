@@ -17,7 +17,6 @@ class SimpleIntervalTestCase(unittest.TestCase):
 
     def test_invert(self):
         x = Bound.CLOSED
-        print(invert(x))
 
     def test_is_empty(self):
         a = SimpleInterval()

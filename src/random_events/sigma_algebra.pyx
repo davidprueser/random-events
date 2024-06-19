@@ -5,9 +5,8 @@ from abc import abstractmethod
 from typing import Tuple, Dict, Any
 
 from sortedcontainers import SortedSet
-from typing_extensions import Self, Iterable, Optional, TYPE_CHECKING
+from typing_extensions import Self, TYPE_CHECKING
 
-from .utils import SubclassJSONSerializer
 
 EMPTY_SET_SYMBOL = "∅"
 
@@ -19,8 +18,8 @@ cdef class AbstractSimpleSet:
     Simple sets are sets that can be represented as a single object.
     """
 
-    @abstractmethod
-    cpdef AbstractSimpleSet intersection_with(self, AbstractSimpleSet other) except *:
+    # @abstractmethod
+    cpdef AbstractSimpleSet intersection_with(self, AbstractSimpleSet other):
         """
         Form the intersection of this object with another object.
 
@@ -30,20 +29,20 @@ cdef class AbstractSimpleSet:
         raise NotImplementedError
 
     # @abstractmethod
-    # cpdef SimpleSetContainer complement(self) except *:
-    #     """
-    #     :return: The complement of this set as disjoint set of simple sets.
-    #     """
-    #     raise NotImplementedError
+    cpdef complement(self):
+        """
+        :return: The complement of this set as disjoint set of simple sets.
+        """
+        raise NotImplementedError
 
-    @abstractmethod
+    # @abstractmethod
     cpdef bint is_empty(self) except *:
         """
         :return: Rather this set is empty or not.
         """
         raise NotImplementedError
 
-    @abstractmethod
+    # @abstractmethod
     cpdef bint contains(self, float item) except *:
         """
         Check if this set contains an item.
@@ -52,7 +51,7 @@ cdef class AbstractSimpleSet:
         """
         raise NotImplementedError
 
-    @abstractmethod
+    # @abstractmethod
     def __hash__(self):
         raise NotImplementedError
 
@@ -62,35 +61,35 @@ cdef class AbstractSimpleSet:
         """
         raise NotImplementedError
 
-#     def difference_with(self, other: Self) -> SimpleSetContainer:
-#         """
-#         Form the difference of this object with another object.
-#
-#         :param other: The other SimpleSet
-#         :return: The difference as disjoint set of simple sets.
-#         """
-#
-#         # if the intersection is empty
-#         intersection = self.intersection_with(other)
-#         if intersection.is_empty():
-#             # then the difference is the set itself
-#             return SortedSet([self])
-#
-#         # form the complement of the intersection
-#         complement_of_intersection = intersection.complement()
-#
-#         # for every element in the complement of the intersection
-#         result = SortedSet()
-#         for element in complement_of_intersection:
-#
-#             # if it intersects with this set
-#             intersection = element.intersection_with(self)
-#             if not intersection.is_empty():
-#                 # add the intersection to the result
-#                 result.add(intersection)
-#
-#         return result
-#
+    cpdef difference_with(self, AbstractSimpleSet other):
+        """
+        Form the difference of this object with another object.
+
+        :param other: The other SimpleSet
+        :return: The difference as disjoint set of simple sets.
+        """
+
+        # if the intersection is empty
+        intersection = self.intersection_with(other)
+        if intersection.is_empty():
+            # then the difference is the set itself
+            return SortedSet([self])
+
+        # form the complement of the intersection
+        complement_of_intersection = intersection.complement()
+
+        # for every element in the complement of the intersection
+        result = SortedSet()
+        for element in complement_of_intersection:
+
+            # if it intersects with this set
+            intersection = element.intersection_with(self)
+            if not intersection.is_empty():
+                # add the intersection to the result
+                result.add(intersection)
+
+        return result
+
     cpdef str to_string(self):
         """
         :return: A string representation of this set.
@@ -98,36 +97,35 @@ cdef class AbstractSimpleSet:
         if self.is_empty():
             return EMPTY_SET_SYMBOL
         return self.non_empty_to_string()
-#
-#     def __str__(self):
-#         return self.to_string()
-#
-#     @abstractmethod
-#     def __lt__(self, other):
-#         raise NotImplementedError
-#
-#     @abstractmethod
-#     def as_composite_set(self) -> AbstractCompositeSet:
-#         """
-#         Convert this simple set to a composite set.
-#         :return: The composite set
-#         """
-#         raise NotImplementedError
-#
-#
-cdef class AbstractCompositeSet(SubclassJSONSerializer):
+
+    def __str__(self):
+        return self.to_string()
+
+    # @abstractmethod
+    def __lt__(self, other):
+        raise NotImplementedError
+
+    # @abstractmethod
+    cpdef AbstractCompositeSet as_composite_set(self):
+        """
+        Convert this simple set to a composite set.
+        :return: The composite set
+        """
+        raise NotImplementedError
+
+
+cdef class AbstractCompositeSet:
     """
     Abstract class for composite sets.
 
     AbstractCompositeSet is a set that is composed of a disjoint union of simple sets.
     """
 
-    cdef SimpleSetContainer simple_sets
 
     def __init__(self, *simple_sets):
         self.simple_sets = SortedSet(simple_sets)
 
-    @abstractmethod
+    # @abstractmethod
     cpdef AbstractCompositeSet simplify(self):
         """
         Simplify this set into an equivalent, more compact version.
@@ -136,7 +134,7 @@ cdef class AbstractCompositeSet(SubclassJSONSerializer):
         """
         raise NotImplementedError
 
-    @abstractmethod
+    # @abstractmethod
     cpdef AbstractCompositeSet new_empty_set(self):
         """
         Create a new empty set.
@@ -148,7 +146,7 @@ cdef class AbstractCompositeSet(SubclassJSONSerializer):
         """
         raise NotImplementedError
 
-    cpdef AbstractCompositeSet union_with(self, other: Self):
+    cpdef AbstractCompositeSet union_with(self, AbstractCompositeSet other):
         """
         Form the union of this object with another object.
 
@@ -163,7 +161,7 @@ cdef class AbstractCompositeSet(SubclassJSONSerializer):
     def __or__(self, other: Self):
         return self.union_with(other)
 
-    cpdef AbstractCompositeSet intersection_with_simple_set(self, other: AbstractSimpleSet):
+    cpdef AbstractCompositeSet intersection_with_simple_set(self, AbstractSimpleSet other):
         """
         Form the intersection of this object with a simple set.
 
@@ -174,7 +172,7 @@ cdef class AbstractCompositeSet(SubclassJSONSerializer):
         [result.add_simple_set(simple_set.intersection_with(other)) for simple_set in self.simple_sets]
         return result
 
-    cpdef AbstractCompositeSet intersection_with_simple_sets(self, other: SimpleSetContainer):
+    cpdef AbstractCompositeSet intersection_with_simple_sets(self, other):
         """
         Form the intersection of this object with a set of simple sets.
 
@@ -186,7 +184,7 @@ cdef class AbstractCompositeSet(SubclassJSONSerializer):
          in other]
         return result
 
-    cpdef AbstractCompositeSet intersection_with(self, other: Self):
+    cpdef AbstractCompositeSet intersection_with(self, AbstractCompositeSet other):
         """
         Form the intersection of this object with another object.
         :param other: The other set
@@ -197,7 +195,7 @@ cdef class AbstractCompositeSet(SubclassJSONSerializer):
     def __and__(self, other):
         return self.intersection_with(other)
 
-    cpdef AbstractCompositeSet difference_with_simple_set(self, other: AbstractSimpleSet):
+    cpdef AbstractCompositeSet difference_with_simple_set(self, AbstractSimpleSet other):
         """
         Form the difference with another composite set.
         :param other: The other set
@@ -206,67 +204,67 @@ cdef class AbstractCompositeSet(SubclassJSONSerializer):
         result = self.new_empty_set()
         [result.simple_sets.update(simple_set.difference_with(other)) for simple_set in self.simple_sets]
         return result.make_disjoint()
-#
-#     def difference_with_simple_sets(self, other: SimpleSetContainer) -> Self:
-#
-#         # initialize the result
-#         result = self.new_empty_set()
-#
-#         # for every simple set in this set
-#         for own_simple_set in self.simple_sets:
-#
-#             # initialize the current difference
-#             current_difference = self.new_empty_set()
-#             first_iteration = True
-#
-#             # for every simple set in the other set
-#             for other_simple_set in other:
-#
-#                 # form the element wise difference
-#                 difference_with_other_simple_set = own_simple_set.difference_with(other_simple_set)
-#
-#                 # if this is the first iteration
-#                 if first_iteration:
-#                     # just copy the element wise difference
-#                     current_difference.simple_sets.update(difference_with_other_simple_set)
-#                     first_iteration = False
-#                     continue
-#
-#                 # form the intersection of the current difference with the element wise difference
-#                 difference = self.new_empty_set()
-#                 difference.simple_sets.update(difference_with_other_simple_set)
-#                 current_difference = current_difference.intersection_with(difference)
-#
-#             # add the current difference to the result
-#             result.simple_sets.update(current_difference.simple_sets)
-#
-#         return result.make_disjoint()
-#
-#     def difference_with(self, other: Self) -> Self:
-#         """
-#         Form the difference with another composite set.
-#         :param other: The other set
-#         :return: The difference of this set with the other set
-#         """
-#         return self.difference_with_simple_sets(other.simple_sets)
-#
-#     def __sub__(self, other):
-#         return self.difference_with(other)
-#
-#     def complement(self) -> Self:
-#         """
-#         :return: The complement of this set
-#         """
-#
-#         if self.is_empty():
-#             return self.complement_if_empty()
-#
-#         result = self.new_empty_set()
-#         result.simple_sets = self.simple_sets[0].complement()
-#         for simple_set in self.simple_sets[1:]:
-#             result = result.intersection_with_simple_sets(simple_set.complement())
-#         return result.make_disjoint()
-#
+
+    cpdef AbstractCompositeSet difference_with_simple_sets(self, other):
+
+        # initialize the result
+        result = self.new_empty_set()
+
+        # for every simple set in this set
+        for own_simple_set in self.simple_sets:
+
+            # initialize the current difference
+            current_difference = self.new_empty_set()
+            first_iteration = True
+
+            # for every simple set in the other set
+            for other_simple_set in other:
+
+                # form the element wise difference
+                difference_with_other_simple_set = own_simple_set.difference_with(other_simple_set)
+
+                # if this is the first iteration
+                if first_iteration:
+                    # just copy the element wise difference
+                    current_difference.simple_sets.update(difference_with_other_simple_set)
+                    first_iteration = False
+                    continue
+
+                # form the intersection of the current difference with the element wise difference
+                difference = self.new_empty_set()
+                difference.simple_sets.update(difference_with_other_simple_set)
+                current_difference = current_difference.intersection_with(difference)
+
+            # add the current difference to the result
+            result.simple_sets.update(current_difference.simple_sets)
+
+        return result.make_disjoint()
+
+    cpdef AbstractCompositeSet difference_with(self, AbstractCompositeSet other):
+        """
+        Form the difference with another composite set.
+        :param other: The other set
+        :return: The difference of this set with the other set
+        """
+        return self.difference_with_simple_sets(other.simple_sets)
+
+    def __sub__(self, other):
+        return self.difference_with(other)
+
+    cpdef AbstractCompositeSet complement(self):
+        """
+        :return: The complement of this set
+        """
+
+        if self.is_empty():
+            return self.complement_if_empty()
+
+        result = self.new_empty_set()
+        result.simple_sets = self.simple_sets[0].complement()
+        for simple_set in self.simple_sets[1:]:
+            result = result.intersection_with_simple_sets(simple_set.complement())
+        return result.make_disjoint()
+
 #     @abstractmethod
 #     def complement_if_empty(self) -> Self:
 #         """
@@ -320,7 +318,7 @@ cdef class AbstractCompositeSet(SubclassJSONSerializer):
 #                 return False
 #         return True
 #
-    cdef Tuple[AbstractCompositeSet, AbstractCompositeSet] split_into_disjoint_and_non_disjoint(self):
+    cdef split_into_disjoint_and_non_disjoint(self):
         """
         Split this composite set into disjoint and non-disjoint parts.
 
@@ -343,7 +341,7 @@ cdef class AbstractCompositeSet(SubclassJSONSerializer):
 
         # for every simple set (a)
         for simple_set_a in self.simple_sets:
-            cdef AbstractSimpleSet simple_set_a
+            simple_set_a: AbstractSimpleSet
 
             # initialize the difference of a with every b
             difference_of_a_with_every_b = self.new_empty_set()
@@ -397,14 +395,14 @@ cdef class AbstractCompositeSet(SubclassJSONSerializer):
         # while the intersection is not empty
         while not intersection.is_empty():
             # split the intersection into disjoint and non-disjoint parts
-            cdef Tuple[AbstractCompositeSet, AbstractCompositeSet] current_disjoint, intersection = intersection.split_into_disjoint_and_non_disjoint()
+            current_disjoint, intersection = intersection.split_into_disjoint_and_non_disjoint()
 
             # add the disjoint intersection to the disjoint set
             disjoint.simple_sets.update(current_disjoint.simple_sets)
 
         return disjoint.simplify()
 
-    cpdef add_simple_set(self, simple_set: AbstractSimpleSet):
+    cpdef add_simple_set(self, AbstractSimpleSet simple_set):
         """
         Add a simple set to this composite set if it is not empty.
 
