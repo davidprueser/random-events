@@ -1,9 +1,4 @@
 from __future__ import annotations
-
-import itertools
-from abc import abstractmethod
-from typing import Tuple, Dict, Any
-
 from sortedcontainers import SortedSet
 from typing_extensions import Self, TYPE_CHECKING
 
@@ -18,7 +13,6 @@ cdef class AbstractSimpleSet:
     Simple sets are sets that can be represented as a single object.
     """
 
-    # @abstractmethod
     cpdef AbstractSimpleSet intersection_with(self, AbstractSimpleSet other):
         """
         Form the intersection of this object with another object.
@@ -28,7 +22,6 @@ cdef class AbstractSimpleSet:
         """
         raise NotImplementedError
 
-    # @abstractmethod
     cpdef complement(self):
         """
         :return: The complement of this set as disjoint set of simple sets.

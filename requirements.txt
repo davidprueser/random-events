@@ -3,4 +3,3 @@ plotly
 typing_extensions
 sortedcontainers
 cython
-orderedset

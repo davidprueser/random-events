@@ -1,12 +1,3 @@
-from abc import abstractmethod
-
-from typing_extensions import Tuple
-
-from random_events.sigma_algebra import SimpleSetContainer
-
-# cdef class OrderedSet(OrderedSet):
-#     pass
-
 cdef class AbstractSimpleSet:
     cpdef AbstractSimpleSet intersection_with(self, AbstractSimpleSet other)
 

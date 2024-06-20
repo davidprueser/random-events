@@ -1,11 +1,14 @@
-import dataclasses
+from random_events.sigma_algebra cimport AbstractSimpleSet, AbstractCompositeSet
 
-from random_events.sigma_algebra cimport AbstractSimpleSet, AbstractCompositeSet, OrderedSet
-import sigma_algebra
+cpdef enum Bound:
+    OPEN = 0
+    CLOSED = 1
 
-cdef class Bound
+cdef Bound invert(self) except *
 
-@dataclasses.dataclass
+cdef Bound intersect(Bound first, Bound second) except *
+
+
 cdef class SimpleInterval(AbstractSimpleSet):
     cdef public float lower
     """
@@ -44,8 +47,6 @@ cdef class SimpleInterval(AbstractSimpleSet):
     cpdef float center(self) except *
 
 cdef class Interval(AbstractCompositeSet):
-
-    cdef OrderedSet simple_sets
 
     cpdef Interval simplify(self)
 
