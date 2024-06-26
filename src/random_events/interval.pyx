@@ -1,27 +1,45 @@
 from __future__ import annotations
 from libc.stdio cimport printf
 from sortedcontainers import SortedSet
+from typing_extensions import Dict, Any, Self
+from random_events.utils import SubclassJSONSerializer
 
-cdef Bound invert(self) except *:
-    return Bound.CLOSED if self == Bound.OPEN else Bound.OPEN
+cdef class Bound:
+    OPEN = 0
+    CLOSED = 1
 
-cdef Bound intersect(Bound first, Bound second) except *:
-    """
-    Intersect with another border
+    @classmethod
+    def invert(cls, value):
+        return Bound.CLOSED if value == Bound.OPEN else Bound.OPEN
 
-    :param first: First border
-    :param second: The other border
-    :return: The intersection of the two borders
-    """
-    return Bound.OPEN if first == Bound.OPEN or second == Bound.OPEN else Bound.CLOSED
 
+    @classmethod
+    def intersect(cls, first, Bound second):
+        """
+        Intersect with another border
+
+        :param second: The other border
+        :return: The intersection of the two borders
+        """
+        return Bound.OPEN if first == Bound.OPEN or second == Bound.OPEN else Bound.CLOSED
+
+    @classmethod
+    def _names(cls):
+        return {k for k, v in cls.__dict__.items() if not k.startswith('_')}
+
+    @classmethod
+    def get_name(cls, int value):
+        for name, val in cls.__dict__.items():
+            if val == value and not name.startswith('_'):
+                return name
+        return None
 
 cdef class SimpleInterval(AbstractSimpleSet):
     """
     Represents a simple interval.
     """
 
-    def __init__(self, lower: float = 0, upper: float = 0, left: Bound = Bound.CLOSED, right: Bound = Bound.CLOSED):
+    def __init__(self, lower: float = 0, upper: float = 0, left: int = Bound.CLOSED, right: int = Bound.CLOSED):
         """
         Initializes the interval.
         :param lower: The lower bound of the interval.
@@ -73,15 +91,15 @@ cdef class SimpleInterval(AbstractSimpleSet):
 
         # create the new left bound
         if self.lower == other.lower:
-            new_left: Bound = intersect(self.left, other.left)
+            new_left: int = Bound.intersect(self.left, other.left)
         else:
-            new_left: Bound = self.left if self.lower > other.lower else other.left
+            new_left: int = self.left if self.lower > other.lower else other.left
 
         # create the new right bound
         if self.upper == other.upper:
-            new_right: Bound = intersect(self.right, other.right)
+            new_right: int = Bound.intersect(self.right, other.right)
         else:
-            new_right: Bound = self.right if self.upper < other.upper else other.right
+            new_right: int = self.right if self.upper < other.upper else other.right
 
         return SimpleInterval(new_lower, new_upper, new_left, new_right)
 
@@ -103,12 +121,12 @@ cdef class SimpleInterval(AbstractSimpleSet):
         # if the lower bound is not negative infinity
         if self.lower > float('-inf'):
             # add the interval from minus infinity to the lower bound
-            result.add(SimpleInterval(float('-inf'), self.lower, Bound.OPEN, invert(self.left)))
+            result.add(SimpleInterval(float('-inf'), self.lower, Bound.OPEN, Bound.invert(self.left)))
 
         # if the upper bound is not positive infinity
         if self.upper < float('inf'):
             # add the interval from the upper bound to infinity
-            result.add(SimpleInterval(self.upper, float('inf'), invert(self.right), Bound.OPEN))
+            result.add(SimpleInterval(self.upper, float('inf'), Bound.invert(self.right), Bound.OPEN))
 
         return result
 
@@ -117,24 +135,28 @@ cdef class SimpleInterval(AbstractSimpleSet):
                 self.upper == item and self.right == Bound.CLOSED))
 
     # can be used if bound is a c object not a python class
-    cpdef str non_empty_to_string(self):
-        cdef char *left_bracket = '[' if self.left == Bound.CLOSED else '('
-        cdef char *right_bracket = ']' if self.right == Bound.CLOSED else ')'
-        return printf("%s%f, %f%s", left_bracket, self.lower, self.upper, right_bracket)
-
-    # cpdef Dict[str, Any] to_json(self):
-    #     return {**super().to_json(), 'lower': self.lower, 'upper': self.upper, 'left': self.left.name,
-    #             'right': self.right.name}
-
-    # @classmethod
-    # cdef SimpleInterval _from_json(cls, data: Dict[str, Any]):
-    #     return cls(data['lower'], data['upper'], Bound[data['left']], Bound[data['right']])
+    def non_empty_to_string(self):
+        left_bracket = '[' if self.left == Bound.CLOSED else '('
+        right_bracket = ']' if self.right == Bound.CLOSED else ')'
+        return f'{left_bracket}{self.lower}, {self.upper}{right_bracket}'
+        # cdef left_bracket = '[' if self.left == Bound.CLOSED else '('
+        # cdef right_bracket = ']' if self.right == Bound.CLOSED else ')'
+        # return printf("%s%f, %f%s", left_bracket, self.lower, self.upper, right_bracket)
 
     cpdef float center(self):
         """
         :return: The center point of the interval
         """
         return ((self.lower + self.upper) / 2) + self.lower
+
+class SimpleIntervalPy(SubclassJSONSerializer, SimpleInterval):
+
+    def to_json(self) -> Dict[str, Any]:
+        return {**super().to_json(), 'lower': self.lower, 'upper': self.upper, 'left': Bound.get_name(self.left),
+                'right': Bound.get_name(self.right)}
+    @classmethod
+    def _from_json(cls, data: Dict[str, Any]) -> Self:
+        return cls(data['lower'], data['upper'], Bound[data['left']], Bound[data['right']])
 
 
 cdef class Interval(AbstractCompositeSet):

@@ -1,7 +1,8 @@
 from __future__ import annotations
+import itertools
 from sortedcontainers import SortedSet
-from typing_extensions import Self, TYPE_CHECKING
-
+from typing_extensions import Self, TYPE_CHECKING, Type, Dict, Any
+from random_events.utils import SubclassJSONSerializer
 
 EMPTY_SET_SYMBOL = "∅"
 
@@ -48,7 +49,7 @@ cdef class AbstractSimpleSet:
     def __hash__(self):
         raise NotImplementedError
 
-    cpdef str non_empty_to_string(self):
+    def non_empty_to_string(self):
         """
         :return: A string representation of this set if it is not empty.
         """
@@ -154,7 +155,7 @@ cdef class AbstractCompositeSet:
     def __or__(self, other: Self):
         return self.union_with(other)
 
-    cpdef AbstractCompositeSet intersection_with_simple_set(self, AbstractSimpleSet other):
+    cdef AbstractCompositeSet intersection_with_simple_set(self, AbstractSimpleSet other):
         """
         Form the intersection of this object with a simple set.
 
@@ -165,7 +166,7 @@ cdef class AbstractCompositeSet:
         [result.add_simple_set(simple_set.intersection_with(other)) for simple_set in self.simple_sets]
         return result
 
-    cpdef AbstractCompositeSet intersection_with_simple_sets(self, other):
+    cdef AbstractCompositeSet intersection_with_simple_sets(self, other):
         """
         Form the intersection of this object with a set of simple sets.
 
@@ -188,7 +189,7 @@ cdef class AbstractCompositeSet:
     def __and__(self, other):
         return self.intersection_with(other)
 
-    cpdef AbstractCompositeSet difference_with_simple_set(self, AbstractSimpleSet other):
+    cdef AbstractCompositeSet difference_with_simple_set(self, AbstractSimpleSet other):
         """
         Form the difference with another composite set.
         :param other: The other set
@@ -198,7 +199,10 @@ cdef class AbstractCompositeSet:
         [result.simple_sets.update(simple_set.difference_with(other)) for simple_set in self.simple_sets]
         return result.make_disjoint()
 
-    cpdef AbstractCompositeSet difference_with_simple_sets(self, other):
+    cdef AbstractCompositeSet difference_with_simple_sets(self, other):
+
+        cdef AbstractCompositeSet result, current_difference, difference_with_other_simple_set, difference
+        cdef bint first_iteration = True
 
         # initialize the result
         result = self.new_empty_set()
@@ -208,11 +212,9 @@ cdef class AbstractCompositeSet:
 
             # initialize the current difference
             current_difference = self.new_empty_set()
-            first_iteration = True
 
             # for every simple set in the other set
             for other_simple_set in other:
-
                 # form the element wise difference
                 difference_with_other_simple_set = own_simple_set.difference_with(other_simple_set)
 
@@ -259,58 +261,58 @@ cdef class AbstractCompositeSet:
         return result.make_disjoint()
 
 #     @abstractmethod
-#     def complement_if_empty(self) -> Self:
-#         """
-#         :return: The complement of this if it is empty.
-#         """
-#         raise NotImplementedError
-#
-#     def __invert__(self):
-#         return self.complement()
-#
+    cpdef AbstractCompositeSet complement_if_empty(self):
+        """
+        :return: The complement of this if it is empty.
+        """
+        raise NotImplementedError
+
+    def __invert__(self):
+        return self.complement()
+
     cpdef bint is_empty(self):
         """
         Check if this set is empty.
         """
         return len(self.simple_sets) == 0
-#
-#     def contains(self, item) -> bool:
-#         """
-#         Check if this set contains an item.
-#         :param item: The item to check
-#         :return: Rather if the item is in the set or not
-#         """
-#         for simple_set in self.simple_sets:
-#             if simple_set.contains(item):
-#                 return True
-#         return False
-#
-#     def __contains__(self, item):
-#         return self.contains(item)
-#
-#     def to_string(self):
-#         """
-#         :return: A string representation of this set.
-#         """
-#         if self.is_empty():
-#             return EMPTY_SET_SYMBOL
-#         return "{" + " u ".join([simple_set.to_string() for simple_set in self.simple_sets]) + "}"
-#
-#     def __str__(self):
-#         return self.to_string()
-#
-#     def __repr__(self):
-#         return self.to_string()
-#
-#     def is_disjoint(self):
-#         """
-#         :return: Rather if the simple sets are disjoint or not.
-#         """
-#         for a, b in itertools.combinations(self.simple_sets, 2):
-#             if not a.intersection_with(b).is_empty():
-#                 return False
-#         return True
-#
+
+    cpdef bint contains(self, float item):
+        """
+        Check if this set contains an item.
+        :param item: The item to check
+        :return: Rather if the item is in the set or not
+        """
+        for simple_set in self.simple_sets:
+            if simple_set.contains(item):
+                return True
+        return False
+
+    def __contains__(self, item):
+        return self.contains(item)
+
+    cpdef str to_string(self):
+        """
+        :return: A string representation of this set.
+        """
+        if self.is_empty():
+            return EMPTY_SET_SYMBOL
+        return "{" + " u ".join([simple_set.to_string() for simple_set in self.simple_sets]) + "}"
+
+    def __str__(self):
+        return self.to_string()
+
+    def __repr__(self):
+        return self.to_string()
+
+    cpdef bint is_disjoint(self):
+        """
+        :return: Rather if the simple sets are disjoint or not.
+        """
+        for a, b in itertools.combinations(self.simple_sets, 2):
+            if not a.intersection_with(b).is_empty():
+                return False
+        return True
+
     cdef split_into_disjoint_and_non_disjoint(self):
         """
         Split this composite set into disjoint and non-disjoint parts.
@@ -330,20 +332,18 @@ cdef class AbstractCompositeSet:
 
         # initialize result for disjoint and non-disjoint sets
         cdef AbstractCompositeSet disjoint = self.new_empty_set()
-        non_disjoint = self.new_empty_set()
+        cdef AbstractCompositeSet non_disjoint = self.new_empty_set()
+        cdef AbstractSimpleSet simple_set_a, simple_set_b, intersection_a_b
+        cdef AbstractCompositeSet difference_of_a_with_every_b, difference_with_intersection
 
         # for every simple set (a)
         for simple_set_a in self.simple_sets:
-            simple_set_a: AbstractSimpleSet
-
             # initialize the difference of a with every b
             difference_of_a_with_every_b = self.new_empty_set()
             difference_of_a_with_every_b.add_simple_set(simple_set_a)
 
             # for every other simple set (b)
             for simple_set_b in self.simple_sets:
-                simple_set_b: AbstractSimpleSet
-
                 # skip symmetric iterations
                 if simple_set_a == simple_set_b:
                     continue
@@ -366,13 +366,10 @@ cdef class AbstractCompositeSet:
                 # add the disjoint remainder
                 difference_of_a_with_every_b = difference_with_intersection
 
-            # if the difference_of_a_with_every_b has become None
-            if difference_of_a_with_every_b is None:
-                # skip the rest of the loop
-                continue
-
+            # if the difference_of_a_with_every_b has become None, continue and step into the next iteration, otherwise
             # append the simple_set_a without every other simple set to the disjoint set
-            disjoint.simple_sets.update(difference_of_a_with_every_b.simple_sets)
+            if difference_of_a_with_every_b is not None:
+                disjoint.simple_sets.update(difference_of_a_with_every_b.simple_sets)
 
         return disjoint, non_disjoint
 
@@ -382,6 +379,8 @@ cdef class AbstractCompositeSet:
 
         :return: The disjoint set.
         """
+
+        cdef AbstractCompositeSet disjoint, intersection, current_disjoint
 
         disjoint, intersection = self.split_into_disjoint_and_non_disjoint()
 
@@ -395,7 +394,7 @@ cdef class AbstractCompositeSet:
 
         return disjoint.simplify()
 
-    cpdef add_simple_set(self, AbstractSimpleSet simple_set):
+    cdef add_simple_set(self, AbstractSimpleSet simple_set):
         """
         Add a simple set to this composite set if it is not empty.
 
@@ -403,45 +402,52 @@ cdef class AbstractCompositeSet:
         """
         if simple_set.is_empty():
             return self.simple_sets.add(simple_set)
-#
-#     def __eq__(self, other: Self):
-#         return self.simple_sets._list == other.simple_sets._list
-#
-#     def __hash__(self):
-#         return hash(tuple(self.simple_sets))
-#
-#     def __iter__(self):
-#         return iter(self.simple_sets)
-#
-#     def __lt__(self, other: Self):
-#         """
-#         Compare this set with another set.
-#
-#         The sets are compared by comparing the simple sets in order.
-#         If the pair of simple sets are equal, the next pair is compared.
-#         If all pairs are equal, the set with the least amount of simple sets is considered smaller.
-#
-#         ..note:: This does not define a total order in the mathematical sense. In the mathematical sense, this defines
-#             a partial order.
-#
-#         :param other: The other set
-#         :return: Rather this set is smaller than the other set
-#         """
-#         for a, b in zip(self.simple_sets, other.simple_sets):
-#             if a == b:
-#                 continue
-#             else:
-#                 return a < b
-#         return len(self.simple_sets) < len(other.simple_sets)
-#
-#     def to_json(self) -> Dict[str, Any]:
-#         return {**super().to_json(), "simple_sets": [simple_set.to_json() for simple_set in self.simple_sets]}
-#
-#     @classmethod
-#     def _from_json(cls, data: Dict[str, Any]) -> Self:
-#         return cls(*[AbstractSimpleSet.from_json(simple_set) for simple_set in data["simple_sets"]])
-#
-#
+
+    def __eq__(self, other: Self):
+        return self.simple_sets._list == other.simple_sets._list
+
+    def __hash__(self):
+        return hash(tuple(self.simple_sets))
+
+    def __iter__(self):
+        return iter(self.simple_sets)
+
+    def __lt__(self, other: Self):
+        """
+        Compare this set with another set.
+
+        The sets are compared by comparing the simple sets in order.
+        If the pair of simple sets are equal, the next pair is compared.
+        If all pairs are equal, the set with the least amount of simple sets is considered smaller.
+
+        ..note:: This does not define a total order in the mathematical sense. In the mathematical sense, this defines
+            a partial order.
+
+        :param other: The other set
+        :return: Rather this set is smaller than the other set
+        """
+        for a, b in zip(self.simple_sets, other.simple_sets):
+            if a == b:
+                continue
+            else:
+                return a < b
+        return len(self.simple_sets) < len(other.simple_sets)
+
+
+class AbstractCompositeSetPy(SubclassJSONSerializer, AbstractCompositeSet):
+    """
+    Python class for Abstract Composite Sets. Needed for JSON serialization.
+    """
+
+    def to_json(self) -> Dict[str, Any]:
+        return {**super().to_json(), "simple_sets": [simple_set.to_json() for simple_set in self.simple_sets]}
+
+    @classmethod
+    def _from_json(cls, data: Dict[str, Any]) -> Self:
+        return cls(*[AbstractSimpleSet.from_json(simple_set) for simple_set in data["simple_sets"]])
+
+
+
 # Type definitions
 if TYPE_CHECKING:
     SimpleSetContainer = SortedSet[AbstractSimpleSet]
