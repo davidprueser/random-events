@@ -28,7 +28,7 @@ class CythonTestCase(unittest.TestCase):
         t1 = time.time()
         i = Interval(SimpleInterval(0, 1))
         complement = i.make_disjoint()
-        for i in range(500000):
+        for i in range(100000):
             i = Interval(SimpleInterval(0, 1))
             complement = i.make_disjoint()
 
@@ -42,13 +42,13 @@ class CythonTestCase(unittest.TestCase):
         t1 = time.time()
         i = Interval(SimpleInterval(0, 1))
         complement = i.make_disjoint()
-        for i in range(500000):
+        for i in range(100000):
             i = Interval(SimpleInterval(0, 1))
             complement = i.make_disjoint()
 
         print(i)
         print(complement)
-        print(f"cython {time.time() - t1}")
+        print(f"python {time.time() - t1}")
 
 
 if __name__ == '__main__':

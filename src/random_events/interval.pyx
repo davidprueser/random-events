@@ -39,7 +39,7 @@ cdef class SimpleInterval(AbstractSimpleSet):
     Represents a simple interval.
     """
 
-    def __init__(self, lower: float = 0, upper: float = 0, left: int = Bound.CLOSED, right: int = Bound.CLOSED):
+    def __init__(self, lower: float = 0, upper: float = 0, left: int = Bound.OPEN, right: int = Bound.OPEN):
         """
         Initializes the interval.
         :param lower: The lower bound of the interval.
