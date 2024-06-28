@@ -1,7 +1,10 @@
 from random_events.sigma_algebra cimport AbstractSimpleSet, AbstractCompositeSet
-
+from libcpp.set cimport set as cppset
+from random_events.simple_interval cimport CPPSimpleInterval
 
 cdef class SimpleInterval(AbstractSimpleSet):
+    cdef CPPSimpleInterval _simple_interval
+
     cdef public float lower
     """
     The lower bound of the interval.
@@ -22,15 +25,17 @@ cdef class SimpleInterval(AbstractSimpleSet):
     The bound type of the upper bound.
     """
 
+    # cdef SimpleInterval(self, double lower = 0, double upper = 0, int left = 0, int right = 0)
+
     cpdef AbstractCompositeSet as_composite_set(self)
 
     cpdef bint is_empty(self) except *
 
     cpdef bint is_singleton(self) except *
 
-    cpdef AbstractSimpleSet intersection_with(self, AbstractSimpleSet other)
+    cpdef SimpleInterval intersection_with_si(self, SimpleInterval other)
 
-    cpdef complement(self)
+    cdef cppset[CPPSimpleInterval] complement_si(self)
 
     cpdef bint contains(self, float item) except *
 

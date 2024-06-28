@@ -368,8 +368,11 @@ cdef class AbstractCompositeSet:
 
             # if the difference_of_a_with_every_b has become None, continue and step into the next iteration, otherwise
             # append the simple_set_a without every other simple set to the disjoint set
-            if difference_of_a_with_every_b is not None:
-                disjoint.simple_sets.update(difference_of_a_with_every_b.simple_sets)
+            if difference_of_a_with_every_b is None:
+                continue
+
+
+            disjoint.simple_sets.update(difference_of_a_with_every_b.simple_sets)
 
         return disjoint, non_disjoint
 
@@ -394,14 +397,15 @@ cdef class AbstractCompositeSet:
 
         return disjoint.simplify()
 
-    cdef add_simple_set(self, AbstractSimpleSet simple_set):
+    cdef void add_simple_set(self, AbstractSimpleSet simple_set):
         """
         Add a simple set to this composite set if it is not empty.
 
         :param simple_set: The simple set to add
         """
         if simple_set.is_empty():
-            return self.simple_sets.add(simple_set)
+            return
+        self.simple_sets.add(simple_set)
 
     def __eq__(self, other: Self):
         return self.simple_sets._list == other.simple_sets._list

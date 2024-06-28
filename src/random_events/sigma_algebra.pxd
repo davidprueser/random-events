@@ -1,6 +1,4 @@
-from sortedcontainers import SortedSet
-
-from random_events.utils import SubclassJSONSerializer
+from libcpp.set cimport set as cppset
 
 cdef class AbstractSimpleSet:
     cpdef AbstractSimpleSet intersection_with(self, AbstractSimpleSet other)
@@ -57,4 +55,4 @@ cdef class AbstractCompositeSet:
 
     cpdef AbstractCompositeSet make_disjoint(self)
 
-    cdef add_simple_set(self, AbstractSimpleSet simple_set)
+    cdef void add_simple_set(self, AbstractSimpleSet simple_set)

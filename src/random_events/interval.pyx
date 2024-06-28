@@ -1,5 +1,4 @@
 from __future__ import annotations
-from libc.stdio cimport printf
 from sortedcontainers import SortedSet
 from typing_extensions import Dict, Any, Self
 from random_events.utils import SubclassJSONSerializer
@@ -39,7 +38,7 @@ cdef class SimpleInterval(AbstractSimpleSet):
     Represents a simple interval.
     """
 
-    def __init__(self, lower: float = 0, upper: float = 0, left: int = Bound.CLOSED, right: int = Bound.CLOSED):
+    def __cinit__(self, lower: float = 0, upper: float = 0, left: int = Bound.OPEN, right: int = Bound.OPEN):
         """
         Initializes the interval.
         :param lower: The lower bound of the interval.
@@ -47,18 +46,14 @@ cdef class SimpleInterval(AbstractSimpleSet):
         :param left: The left bound of the interval.
         :param right: The right bound of the interval.
         """
-        self.lower = lower
-        self.upper = upper
-        self.left = left
-        self.right = right
+        self._simple_interval = CPPSimpleInterval(lower, upper, left, right)
 
     def __hash__(self):
-        return hash((self.lower, self.upper, self.left, self.right))
+        return hash((self._simple_interval.lower, self._simple_interval.upper, self._simple_interval.left,
+                     self._simple_interval.right))
 
     def __lt__(self, SimpleInterval other):
-        if self.lower == other.lower:
-            return self.upper < other.upper
-        return self.lower < other.lower
+        return self._simple_interval < other._simple_interval
 
     def __repr__(self):
         return AbstractSimpleSet.to_string(self)
@@ -70,63 +65,69 @@ cdef class SimpleInterval(AbstractSimpleSet):
         return Interval(self)
 
     cpdef bint is_empty(self) except *:
-        return self.lower > self.upper or (
-                self.lower == self.upper and (self.left == Bound.OPEN or self.right == Bound.OPEN))
+        return self._simple_interval.lower > self._simple_interval.upper or (
+                self._simple_interval.lower == self._simple_interval.upper and (self._simple_interval.left == Bound.OPEN
+                                                                                or self._simple_interval.right ==
+                                                                                Bound.OPEN))
 
     cpdef bint is_singleton(self) except *:
         """
         :return: True if the interval is a singleton (contains only one value), False otherwise.
         """
-        return self.lower == self.upper and self.left == Bound.CLOSED and self.right == Bound.CLOSED
+        return (self._simple_interval.lower == self._simple_interval.upper and self._simple_interval.left == Bound.CLOSED
+                and self._simple_interval.right == Bound.CLOSED)
 
-    cpdef AbstractSimpleSet intersection_with(self, AbstractSimpleSet other):
+    cpdef SimpleInterval intersection_with_si(self, SimpleInterval other):
 
         # create new limits for the intersection
-        cdef float new_lower = max(self.lower, other.lower)
-        cdef float new_upper = min(self.upper, other.upper)
+        cdef float new_lower = max(self._simple_interval.lower, other._simple_interval.lower)
+        cdef float new_upper = min(self._simple_interval.upper, other._simple_interval.upper)
 
         # if the new limits are not valid, return an empty interval
         if new_lower > new_upper:
             return SimpleInterval()
 
         # create the new left bound
-        if self.lower == other.lower:
-            new_left: int = Bound.intersect(self.left, other.left)
+        if self._simple_interval.lower == other._simple_interval.lower:
+            new_left: int = Bound.intersect(self._simple_interval.left, other._simple_interval.left)
         else:
-            new_left: int = self.left if self.lower > other.lower else other.left
+            new_left: int = self._simple_interval.left if self._simple_interval.lower > other._simple_interval.lower \
+                else other._simple_interval.left
 
         # create the new right bound
-        if self.upper == other.upper:
-            new_right: int = Bound.intersect(self.right, other.right)
+        if self._simple_interval.upper == other._simple_interval.upper:
+            new_right: int = Bound.intersect(self._simple_interval.right, other._simple_interval.right)
         else:
-            new_right: int = self.right if self.upper < other.upper else other.right
+            new_right: int = self._simple_interval.right if self._simple_interval.upper < other._simple_interval.upper \
+                else other._simple_interval.right
 
         return SimpleInterval(new_lower, new_upper, new_left, new_right)
 
-    cpdef complement(self):
+    cdef cppset[CPPSimpleInterval] complement_si(self):
+        cdef cppset[CPPSimpleInterval] result
 
         # if the interval is empty
         if self.is_empty():
             # return the real line
-            return SortedSet([SimpleInterval(float('-inf'), float('inf'), Bound.OPEN, Bound.OPEN)])
+            result.insert(CPPSimpleInterval(float('-inf'), float('inf'), Bound.OPEN, Bound.OPEN))
+            return result
 
-        # initialize the result
-        result = SortedSet()
+        result = cppset[CPPSimpleInterval]()
 
         # if this is the real line
-        if self.lower == float('-inf') and self.upper == float('inf'):
+        if self._simple_interval.lower == float('-inf') and self._simple_interval.upper == float('inf'):
             # return the empty set
             return result
 
         # if the lower bound is not negative infinity
-        if self.lower > float('-inf'):
+        if self._simple_interval.lower > float('-inf'):
             # add the interval from minus infinity to the lower bound
-            result.add(SimpleInterval(float('-inf'), self.lower, Bound.OPEN, Bound.invert(self.left)))
+            result.insert(CPPSimpleInterval(float('-inf'), self._simple_interval.lower, Bound.OPEN, Bound.invert(self._simple_interval.left)))
 
         # if the upper bound is not positive infinity
-        if self.upper < float('inf'):
+        if self._simple_interval.upper < float('inf'):
             # add the interval from the upper bound to infinity
-            result.add(SimpleInterval(self.upper, float('inf'), Bound.invert(self.right), Bound.OPEN))
+            result.insert(CPPSimpleInterval(self._simple_interval.upper, float('inf'), Bound.invert(self._simple_interval.right), Bound.OPEN))
 
         return result
 
