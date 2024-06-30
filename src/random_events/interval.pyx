@@ -1,6 +1,7 @@
 from __future__ import annotations
 from sortedcontainers import SortedSet
 from typing_extensions import Dict, Any, Self
+
 from random_events.utils import SubclassJSONSerializer
 
 cdef class Bound:
@@ -13,10 +14,11 @@ cdef class Bound:
 
 
     @classmethod
-    def intersect(cls, first, Bound second):
+    def intersect(cls, first, second):
         """
         Intersect with another border
 
+        :param first: The first border
         :param second: The other border
         :return: The intersection of the two borders
         """
@@ -38,7 +40,7 @@ cdef class SimpleInterval(AbstractSimpleSet):
     Represents a simple interval.
     """
 
-    def __cinit__(self, lower: float = 0, upper: float = 0, left: int = Bound.OPEN, right: int = Bound.OPEN):
+    def __init__(self, float lower = 0, float upper = 0, CPPBound left = CPPBound.OPEN, CPPBound right= CPPBound.OPEN):
         """
         Initializes the interval.
         :param lower: The lower bound of the interval.
@@ -46,14 +48,16 @@ cdef class SimpleInterval(AbstractSimpleSet):
         :param left: The left bound of the interval.
         :param right: The right bound of the interval.
         """
-        self._simple_interval = CPPSimpleInterval(lower, upper, left, right)
+        self.si_= CPPSimpleInterval(lower, upper, left, right)
 
     def __hash__(self):
-        return hash((self._simple_interval.lower, self._simple_interval.upper, self._simple_interval.left,
-                     self._simple_interval.right))
+        return hash((self.si_.lower, self.si_.upper, self.si_.left,
+                     self.si_.right))
 
     def __lt__(self, SimpleInterval other):
-        return self._simple_interval < other._simple_interval
+        if self.si_.lower < other.si_.lower:
+            return self.si_.upper < other.si_.upper
+        return self.si_.lower < other.si_.lower
 
     def __repr__(self):
         return AbstractSimpleSet.to_string(self)
@@ -65,41 +69,37 @@ cdef class SimpleInterval(AbstractSimpleSet):
         return Interval(self)
 
     cpdef bint is_empty(self) except *:
-        return self._simple_interval.lower > self._simple_interval.upper or (
-                self._simple_interval.lower == self._simple_interval.upper and (self._simple_interval.left == Bound.OPEN
-                                                                                or self._simple_interval.right ==
-                                                                                Bound.OPEN))
+        return self.si_.is_empty()
 
     cpdef bint is_singleton(self) except *:
         """
         :return: True if the interval is a singleton (contains only one value), False otherwise.
         """
-        return (self._simple_interval.lower == self._simple_interval.upper and self._simple_interval.left == Bound.CLOSED
-                and self._simple_interval.right == Bound.CLOSED)
+        return self.si_.is_singleton()
 
     cpdef SimpleInterval intersection_with_si(self, SimpleInterval other):
 
         # create new limits for the intersection
-        cdef float new_lower = max(self._simple_interval.lower, other._simple_interval.lower)
-        cdef float new_upper = min(self._simple_interval.upper, other._simple_interval.upper)
+        cdef float new_lower = max(self.si_.lower, other.si_.lower)
+        cdef float new_upper = min(self.si_.upper, other.si_.upper)
 
         # if the new limits are not valid, return an empty interval
         if new_lower > new_upper:
             return SimpleInterval()
 
         # create the new left bound
-        if self._simple_interval.lower == other._simple_interval.lower:
-            new_left: int = Bound.intersect(self._simple_interval.left, other._simple_interval.left)
+        if self.si_.lower == other.si_.lower:
+            new_left: int = Bound.intersect(self.si_.left, other.si_.left)
         else:
-            new_left: int = self._simple_interval.left if self._simple_interval.lower > other._simple_interval.lower \
-                else other._simple_interval.left
+            new_left: int = self.si_.left if self.si_.lower > other.si_.lower \
+                else other.si_.left
 
         # create the new right bound
-        if self._simple_interval.upper == other._simple_interval.upper:
-            new_right: int = Bound.intersect(self._simple_interval.right, other._simple_interval.right)
+        if self.si_.upper == other.si_.upper:
+            new_right: int = Bound.intersect(self.si_.right, other.si_.right)
         else:
-            new_right: int = self._simple_interval.right if self._simple_interval.upper < other._simple_interval.upper \
-                else other._simple_interval.right
+            new_right: int = self.si_.right if self.si_.upper < other.si_.upper \
+                else other.si_.right
 
         return SimpleInterval(new_lower, new_upper, new_left, new_right)
 
@@ -114,32 +114,32 @@ cdef class SimpleInterval(AbstractSimpleSet):
 
         result = cppset[CPPSimpleInterval]()
 
+
         # if this is the real line
-        if self._simple_interval.lower == float('-inf') and self._simple_interval.upper == float('inf'):
+        if self.si_.lower == float('-inf') and self.si_.upper == float('inf'):
             # return the empty set
             return result
 
         # if the lower bound is not negative infinity
-        if self._simple_interval.lower > float('-inf'):
+        if self.si_.lower > float('-inf'):
             # add the interval from minus infinity to the lower bound
-            result.insert(CPPSimpleInterval(float('-inf'), self._simple_interval.lower, Bound.OPEN, Bound.invert(self._simple_interval.left)))
+            result.insert(CPPSimpleInterval(float('-inf'), self.si_.lower, Bound.OPEN, Bound.invert(self.si_.left)))
 
         # if the upper bound is not positive infinity
-        if self._simple_interval.upper < float('inf'):
+        if self.si_.upper < float('inf'):
             # add the interval from the upper bound to infinity
-            result.insert(CPPSimpleInterval(self._simple_interval.upper, float('inf'), Bound.invert(self._simple_interval.right), Bound.OPEN))
+            result.insert(CPPSimpleInterval(self.si_.upper, float('inf'), Bound.invert(self.si_.right), Bound.OPEN))
 
         return result
 
     cpdef bint contains(self, float item) except *:
-        return (self.lower < item < self.upper or (self.lower == item and self.left == Bound.CLOSED) or (
-                self.upper == item and self.right == Bound.CLOSED))
+            return self.si_.contains(item)
 
     # can be used if bound is a c object not a python class
     def non_empty_to_string(self):
-        left_bracket = '[' if self.left == Bound.CLOSED else '('
-        right_bracket = ']' if self.right == Bound.CLOSED else ')'
-        return f'{left_bracket}{self.lower}, {self.upper}{right_bracket}'
+        left_bracket = '[' if self.si_.left == 1 else '('
+        right_bracket = ']' if self.si_.right == 1 else ')'
+        return f'{left_bracket}{self.si_.lower}, {self.si_.upper}{right_bracket}'
         # cdef left_bracket = '[' if self.left == Bound.CLOSED else '('
         # cdef right_bracket = ']' if self.right == Bound.CLOSED else ')'
         # return printf("%s%f, %f%s", left_bracket, self.lower, self.upper, right_bracket)
@@ -148,13 +148,13 @@ cdef class SimpleInterval(AbstractSimpleSet):
         """
         :return: The center point of the interval
         """
-        return ((self.lower + self.upper) / 2) + self.lower
+        return self.si_.center()
 
 class SimpleIntervalPy(SubclassJSONSerializer, SimpleInterval):
 
     def to_json(self) -> Dict[str, Any]:
-        return {**super().to_json(), 'lower': self.lower, 'upper': self.upper, 'left': Bound.get_name(self.left),
-                'right': Bound.get_name(self.right)}
+        return {**super().to_json(), 'lower': self.si_.lower, 'upper': self.si_.upper, 'left': Bound.get_name(self.si_.left),
+                'right': Bound.get_name(self.si_.right)}
     @classmethod
     def _from_json(cls, data: Dict[str, Any]) -> Self:
         return cls(data['lower'], data['upper'], Bound[data['left']], Bound[data['right']])

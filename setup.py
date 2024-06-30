@@ -9,7 +9,7 @@ os.environ["CC"] = "g++"  # Ensure using a C++ compiler
 extensions = [
     Extension(
         "interval",
-        sources=["src/random_events/interval.pyx"],
+        sources=["src/random_events/interval.pyx", "src/random_events/sigma_algebra.pyx"],
         language="c++",
         extra_compile_args=["-std=c++11"],
         include_dirs=["src/random_events"],

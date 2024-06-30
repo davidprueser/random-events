@@ -1,5 +1,3 @@
-from libcpp.set cimport set as cppset
-
 cdef class AbstractSimpleSet:
     cpdef AbstractSimpleSet intersection_with(self, AbstractSimpleSet other)
 

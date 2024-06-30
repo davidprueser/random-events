@@ -1,29 +1,32 @@
+from random_events.cpp_set_wrapper import SetWrapper
 from random_events.sigma_algebra cimport AbstractSimpleSet, AbstractCompositeSet
+# from random_events.simple_interval cimport CPPSimpleInterval
 from libcpp.set cimport set as cppset
-from random_events.simple_interval cimport CPPSimpleInterval
+
+from random_events.simple_interval cimport CPPSimpleInterval, CPPBound
 
 cdef class SimpleInterval(AbstractSimpleSet):
-    cdef CPPSimpleInterval _simple_interval
+    cdef CPPSimpleInterval si_
 
-    cdef public float lower
-    """
-    The lower bound of the interval.
-    """
-
-    cdef public float upper
-    """
-    The upper bound of the interval.
-    """
-
-    cdef int left
-    """
-    The bound type of the lower bound.
-    """
-
-    cdef int right
-    """
-    The bound type of the upper bound.
-    """
+    # cdef public float lower
+    # """
+    # The lower bound of the interval.
+    # """
+    #
+    # cdef public float upper
+    # """
+    # The upper bound of the interval.
+    # """
+    #
+    # cdef int left
+    # """
+    # The bound type of the lower bound.
+    # """
+    #
+    # cdef int right
+    # """
+    # The bound type of the upper bound.
+    # """
 
     # cdef SimpleInterval(self, double lower = 0, double upper = 0, int left = 0, int right = 0)
 
