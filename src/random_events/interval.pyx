@@ -1,7 +1,8 @@
+# distutils: language = c++
+# distutils: sources = src/random_events/simple_interval.cpp
 from __future__ import annotations
 from sortedcontainers import SortedSet
 from typing_extensions import Dict, Any, Self
-
 from random_events.utils import SubclassJSONSerializer
 
 cdef class Bound:
@@ -35,12 +36,22 @@ cdef class Bound:
                 return name
         return None
 
+    def get_value(self):
+        for name, val in self.__dict__.items():
+            if name == name and not name.startswith('_'):
+                return val
+        return None
+
+
 cdef class SimpleInterval(AbstractSimpleSet):
     """
     Represents a simple interval.
     """
 
-    def __init__(self, float lower = 0, float upper = 0, CPPBound left = CPPBound.OPEN, CPPBound right= CPPBound.OPEN):
+    def __cinit__(self):
+        self.si_ = new CPPSimpleInterval()
+
+    def __init__(self, float lower = 0, float upper = 0, int left = Bound.OPEN, int right = Bound.OPEN):
         """
         Initializes the interval.
         :param lower: The lower bound of the interval.
@@ -48,7 +59,13 @@ cdef class SimpleInterval(AbstractSimpleSet):
         :param left: The left bound of the interval.
         :param right: The right bound of the interval.
         """
-        self.si_= CPPSimpleInterval(lower, upper, left, right)
+        self.si_.lower = lower
+        self.si_.upper = upper
+        self.si_.left = left
+        self.si_.right = right
+
+    def __dealloc__(self):
+        del self.si_
 
     def __hash__(self):
         return hash((self.si_.lower, self.si_.upper, self.si_.left,
@@ -69,15 +86,16 @@ cdef class SimpleInterval(AbstractSimpleSet):
         return Interval(self)
 
     cpdef bint is_empty(self) except *:
-        return self.si_.is_empty()
+        return self.si_.lower > self.si_.upper or (
+                self.si_.lower == self.si_.upper and (self.si_.left == Bound.OPEN or self.si_.right == Bound.OPEN))
 
     cpdef bint is_singleton(self) except *:
         """
         :return: True if the interval is a singleton (contains only one value), False otherwise.
         """
-        return self.si_.is_singleton()
+        return self.si_.lower == self.si_.upper and self.si_.left == Bound.CLOSED and self.si_.right == Bound.CLOSED
 
-    cpdef SimpleInterval intersection_with_si(self, SimpleInterval other):
+    cpdef AbstractSimpleSet intersection_with(self, AbstractSimpleSet other):
 
         # create new limits for the intersection
         cdef float new_lower = max(self.si_.lower, other.si_.lower)
@@ -103,7 +121,7 @@ cdef class SimpleInterval(AbstractSimpleSet):
 
         return SimpleInterval(new_lower, new_upper, new_left, new_right)
 
-    cdef cppset[CPPSimpleInterval] complement_si(self):
+    cdef cppset[CPPSimpleInterval] complement_cpp(self):
         cdef cppset[CPPSimpleInterval] result
 
         # if the interval is empty
@@ -133,7 +151,8 @@ cdef class SimpleInterval(AbstractSimpleSet):
         return result
 
     cpdef bint contains(self, float item) except *:
-            return self.si_.contains(item)
+        return (self.si_.lower < item < self.si_.upper or (self.si_.lower == item and self.si_.left == Bound.CLOSED) or (
+                self.si_.upper == item and self.si_.right == Bound.CLOSED))
 
     # can be used if bound is a c object not a python class
     def non_empty_to_string(self):
@@ -148,7 +167,7 @@ cdef class SimpleInterval(AbstractSimpleSet):
         """
         :return: The center point of the interval
         """
-        return self.si_.center()
+        return ((self.si_.lower + self.si_.upper) / 2) + self.si_.lower
 
 class SimpleIntervalPy(SubclassJSONSerializer, SimpleInterval):
 
@@ -202,7 +221,7 @@ cdef class Interval(AbstractCompositeSet):
         """
         :return: True if the interval is a singleton (contains only one value), False otherwise.
         """
-        return len(self.simple_sets) == 1 and self.simple_sets[0].is_singleton()
+        return self.simple_sets.size() == 1 and self.simple_sets[0].is_singleton()
 
 
 cpdef Interval open(float left, float right):

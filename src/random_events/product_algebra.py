@@ -103,7 +103,7 @@ class SimpleEvent(AbstractSimpleSet, VariableMap):
             current_complement = SimpleEvent()
 
             # set the current variable to its complement
-            current_complement[variable] = assignment.complement()
+            current_complement[variable] = assignment.complement_cpp()
 
             # for every other variable
             for other_variable in self.variables:

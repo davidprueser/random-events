@@ -23,7 +23,7 @@ cdef class AbstractSimpleSet:
         """
         raise NotImplementedError
 
-    cpdef complement(self):
+    cdef complement(self):
         """
         :return: The complement of this set as disjoint set of simple sets.
         """
@@ -117,7 +117,7 @@ cdef class AbstractCompositeSet:
 
 
     def __init__(self, *simple_sets):
-        self.simple_sets = SortedSet(simple_sets)
+        self.simple_sets = cppset(simple_sets)
 
     # @abstractmethod
     cpdef AbstractCompositeSet simplify(self):
@@ -148,8 +148,8 @@ cdef class AbstractCompositeSet:
         :return: The union of this set with the other set
         """
         result = self.new_empty_set()
-        result.simple_sets.update(self.simple_sets)
-        result.simple_sets.update(other.simple_sets)
+        result.simple_sets.insert(self.simple_sets.begin(), self.simple_sets.end())
+        result.simple_sets.insert(other.simple_sets.begin(), other.simple_sets.end())
         return result.make_disjoint()
 
     def __or__(self, other: Self):
@@ -174,7 +174,7 @@ cdef class AbstractCompositeSet:
         :return: The intersection of this set with the set of simple sets
         """
         result = self.new_empty_set()
-        [result.simple_sets.update(self.intersection_with_simple_set(other_simple_set).simple_sets) for other_simple_set
+        [result.simple_sets.insert(self.intersection_with_simple_set(other_simple_set).simple_sets) for other_simple_set
          in other]
         return result
 
@@ -246,7 +246,7 @@ cdef class AbstractCompositeSet:
     def __sub__(self, other):
         return self.difference_with(other)
 
-    cpdef AbstractCompositeSet complement(self):
+    cdef AbstractCompositeSet complement(self):
         """
         :return: The complement of this set
         """
@@ -255,9 +255,9 @@ cdef class AbstractCompositeSet:
             return self.complement_if_empty()
 
         result = self.new_empty_set()
-        result.simple_sets = self.simple_sets[0].complement()
+        result.simple_sets = self.simple_sets[0].complement_cpp()
         for simple_set in self.simple_sets[1:]:
-            result = result.intersection_with_simple_sets(simple_set.complement())
+            result = result.intersection_with_simple_sets(simple_set.complement_cpp())
         return result.make_disjoint()
 
 #     @abstractmethod

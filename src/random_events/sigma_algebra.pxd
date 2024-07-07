@@ -1,7 +1,10 @@
+from random_events.simple_interval cimport CPPAbstractSimpleSet, CPPSimpleInterval
+from libcpp.set cimport set as cppset
+
 cdef class AbstractSimpleSet:
     cpdef AbstractSimpleSet intersection_with(self, AbstractSimpleSet other)
 
-    cpdef complement(self)
+    cdef complement(self)
 
     cpdef bint is_empty(self) except *
 
@@ -17,7 +20,7 @@ cdef class AbstractSimpleSet:
 
 
 cdef class AbstractCompositeSet:
-    cdef simple_sets
+    cdef cppset[CPPAbstractSimpleSet] simple_sets
 
     cpdef AbstractCompositeSet simplify(self)
 
@@ -37,7 +40,7 @@ cdef class AbstractCompositeSet:
 
     cpdef AbstractCompositeSet difference_with(self, AbstractCompositeSet other)
 
-    cpdef AbstractCompositeSet complement(self)
+    cdef AbstractCompositeSet complement(self)
 
     cpdef AbstractCompositeSet complement_if_empty(self)
 
