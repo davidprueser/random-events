@@ -11,7 +11,7 @@ cdef class SimpleInterval(AbstractSimpleSet):
 
     cpdef bint is_singleton(self) except *
 
-    cpdef AbstractSimpleSet intersection_with(self, AbstractSimpleSet other)
+    cpdef SimpleInterval intersection_with_cpp(self, SimpleInterval other)
 
     cdef cppset[CPPSimpleInterval] complement_cpp(self)
 
@@ -23,10 +23,10 @@ cdef class SimpleInterval(AbstractSimpleSet):
 
 cdef class Interval(AbstractCompositeSet):
 
-    cpdef Interval simplify(self)
+    # cpdef Interval simplify(self)
 
     cpdef Interval new_empty_set(self)
 
     cpdef Interval complement_if_empty(self)
 
-    cpdef bint is_singleton(self)
+    # cpdef bint is_singleton(self)

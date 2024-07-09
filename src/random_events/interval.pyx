@@ -95,7 +95,7 @@ cdef class SimpleInterval(AbstractSimpleSet):
         """
         return self.si_.lower == self.si_.upper and self.si_.left == Bound.CLOSED and self.si_.right == Bound.CLOSED
 
-    cpdef AbstractSimpleSet intersection_with(self, AbstractSimpleSet other):
+    cpdef SimpleInterval intersection_with_cpp(self, SimpleInterval other):
 
         # create new limits for the intersection
         cdef float new_lower = max(self.si_.lower, other.si_.lower)
@@ -181,35 +181,35 @@ class SimpleIntervalPy(SubclassJSONSerializer, SimpleInterval):
 
 cdef class Interval(AbstractCompositeSet):
 
-    cpdef Interval simplify(self):
-
-        # if the set is empty, return it
-        if self.is_empty():
-            return self
-
-        # initialize the result
-        result: Interval = self.simple_sets[0].as_composite_set()
-
-        # iterate over the simple sets
-        for current_simple_interval in self.simple_sets[1:]:
-
-            # get the last element in the result
-            last_simple_interval : SortedSet[SimpleInterval] = result.simple_sets[-1]
-
-            # if the borders are connected
-            if (last_simple_interval.upper > current_simple_interval.lower or (
-                    last_simple_interval.upper == current_simple_interval.lower and not (
-                    last_simple_interval.right == Bound.OPEN and current_simple_interval.left == Bound.OPEN))):
-
-                # extend the upper bound of the last element
-                last_simple_interval.upper = current_simple_interval.upper
-                last_simple_interval.right = current_simple_interval.right
-            else:
-
-                # add the current element to the result
-                result.simple_sets.add(current_simple_interval)
-
-        return result
+    # cpdef Interval simplify(self):
+    #
+    #     # if the set is empty, return it
+    #     if self.is_empty():
+    #         return self
+    #
+    #     # initialize the result
+    #     result: Interval = self.simple_sets[0].as_composite_set()
+    #
+    #     # iterate over the simple sets
+    #     for current_simple_interval in self.simple_sets[1:]:
+    #
+    #         # get the last element in the result
+    #         last_simple_interval : SortedSet[SimpleInterval] = result.simple_sets[-1]
+    #
+    #         # if the borders are connected
+    #         if (last_simple_interval.upper > current_simple_interval.lower or (
+    #                 last_simple_interval.upper == current_simple_interval.lower and not (
+    #                 last_simple_interval.right == Bound.OPEN and current_simple_interval.left == Bound.OPEN))):
+    #
+    #             # extend the upper bound of the last element
+    #             last_simple_interval.upper = current_simple_interval.upper
+    #             last_simple_interval.right = current_simple_interval.right
+    #         else:
+    #
+    #             # add the current element to the result
+    #             result.simple_sets.insert(current_simple_interval)
+    #
+    #     return result
 
     cpdef Interval new_empty_set(self):
         return Interval()
@@ -217,11 +217,11 @@ cdef class Interval(AbstractCompositeSet):
     cpdef Interval complement_if_empty(self):
         return Interval([SimpleInterval(float('-inf'), float('inf'), Bound.OPEN, Bound.OPEN)])
 
-    cpdef bint is_singleton(self):
-        """
-        :return: True if the interval is a singleton (contains only one value), False otherwise.
-        """
-        return self.simple_sets.size() == 1 and self.simple_sets[0].is_singleton()
+    # cpdef bint is_singleton(self):
+    #     """
+    #     :return: True if the interval is a singleton (contains only one value), False otherwise.
+    #     """
+    #     return self.simple_sets.size() == 1 and self.simple_sets.begin().is_singleton()
 
 
 cpdef Interval open(float left, float right):

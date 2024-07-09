@@ -1,4 +1,4 @@
-from random_events.simple_interval cimport CPPAbstractSimpleSet, CPPSimpleInterval
+from random_events.simple_interval cimport CPPAbstractSimpleSet, CPPSimpleInterval, CPPAbstractCompositeSet
 from libcpp.set cimport set as cppset
 
 cdef class AbstractSimpleSet:
@@ -20,40 +20,41 @@ cdef class AbstractSimpleSet:
 
 
 cdef class AbstractCompositeSet:
-    cdef cppset[CPPAbstractSimpleSet] simple_sets
+    cdef CPPAbstractCompositeSet *acs_
+    cdef cppset[CPPSimpleInterval] simple_sets
 
     cpdef AbstractCompositeSet simplify(self)
 
     cpdef AbstractCompositeSet new_empty_set(self)
 
-    cpdef AbstractCompositeSet union_with(self, AbstractCompositeSet other)
+    # cpdef AbstractCompositeSet union_with(self, AbstractCompositeSet other)
+    #
+    # cdef AbstractCompositeSet intersection_with_simple_set(self, AbstractSimpleSet other)
+    #
+    # cdef AbstractCompositeSet intersection_with_simple_sets(self, other)
+    #
+    # cpdef AbstractCompositeSet intersection_with(self, AbstractCompositeSet other)
+    #
+    # cdef AbstractCompositeSet difference_with_simple_set(self, AbstractSimpleSet other)
+    #
+    # cdef AbstractCompositeSet difference_with_simple_sets(self, other)
 
-    cdef AbstractCompositeSet intersection_with_simple_set(self, AbstractSimpleSet other)
+    # cpdef AbstractCompositeSet difference_with(self, AbstractCompositeSet other)
 
-    cdef AbstractCompositeSet intersection_with_simple_sets(self, other)
-
-    cpdef AbstractCompositeSet intersection_with(self, AbstractCompositeSet other)
-
-    cdef AbstractCompositeSet difference_with_simple_set(self, AbstractSimpleSet other)
-
-    cdef AbstractCompositeSet difference_with_simple_sets(self, other)
-
-    cpdef AbstractCompositeSet difference_with(self, AbstractCompositeSet other)
-
-    cdef AbstractCompositeSet complement(self)
+    # cdef AbstractCompositeSet complement(self)
 
     cpdef AbstractCompositeSet complement_if_empty(self)
 
-    cpdef bint is_empty(self)
+    # cpdef bint is_empty(self)
 
-    cpdef bint contains(self, float item)
+    # cpdef bint contains(self, float item)
 
-    cpdef str to_string(self)
+    # cpdef str to_string(self)
 
-    cpdef bint is_disjoint(self)
+    # cpdef bint is_disjoint(self)
 
     cdef split_into_disjoint_and_non_disjoint(self)
 
-    cpdef AbstractCompositeSet make_disjoint(self)
+    # cpdef AbstractCompositeSet make_disjoint(self)
 
     cdef void add_simple_set(self, AbstractSimpleSet simple_set)
