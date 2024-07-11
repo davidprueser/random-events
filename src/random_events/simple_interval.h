@@ -1,6 +1,10 @@
+// CPPAbstractCompositeSet.h
+
 #ifndef SIMPLE_INTERVAL_H
 #define SIMPLE_INTERVAL_H
 #include <functional>
+#include <memory>
+#include <set>
 
 
 class CPPAbstractSimpleSet;
@@ -24,6 +28,14 @@ typedef std::shared_ptr<CPPSimpleSetSet_t> CPPSimpleSetSetPtr_t;
 class CPPAbstractSimpleSet {
 public:
     virtual ~CPPAbstractSimpleSet() = default;
+    bool operator!=(const CPPAbstractSimpleSet& other) const;
+    bool operator>(const CPPAbstractSimpleSet& other) const;
+    bool operator>=(const CPPAbstractSimpleSet& other) const;
+    bool operator==(const CPPAbstractSimpleSet& other) const;
+    bool operator!=(const CPPAbstractSimpleSetPtr_t &other) const;
+    virtual bool operator==(const CPPAbstractSimpleSet &other)= 0;
+    virtual bool operator<(const CPPAbstractSimpleSet &other)= 0;
+    virtual bool operator<=(const CPPAbstractSimpleSet &other)= 0;
 };
 
 class CPPSimpleInterval : public CPPAbstractSimpleSet{
@@ -33,20 +45,28 @@ public:
     int left;
     int right;
 
-    CPPSimpleInterval();
-    CPPSimpleInterval(float lower, float upper, int left, int right);
-    bool operator<(const CPPSimpleInterval& other) const;
+    explicit CPPSimpleInterval(float lower = 0, float upper = 0, int left = 0, int right = 0) {
+        this->lower = lower;
+        this->upper = upper;
+        this->left = left;
+        this->right = right;
+    }
+    bool operator==(const CPPAbstractSimpleSet& other) const;
     bool operator==(const CPPSimpleInterval& other) const;
+    bool operator<(const CPPAbstractSimpleSet& other) const;
+    bool operator<(const CPPSimpleInterval& other) const;
+    bool operator<=(const CPPAbstractSimpleSet& other) const;
+    bool operator<=(const CPPSimpleInterval& other) const;
 };
 
 class CPPAbstractCompositeSet {
 public:
-    set<CPPAbstractSimpleSet> *simple_sets_cpp;
+    std::set<CPPAbstractSimpleSet> *simple_sets;
 
     CPPAbstractCompositeSet() = default;
 
     virtual ~CPPAbstractCompositeSet() {
-        simple_sets_cpp->clear();
+        simple_sets->clear();
     }
 
 

@@ -11,26 +11,75 @@
 //}
 
 
-
-CPPSimpleInterval::CPPSimpleInterval(){}
-CPPSimpleInterval::CPPSimpleInterval(float lower, float upper, int left, int right){
-    this->lower = lower;
-    this->upper = upper;
-    this->left = left;
-    this->right = right;
+bool CPPAbstractSimpleSet::operator!=(const CPPAbstractSimpleSet &other){
+    return !operator==(other);
 }
 
-bool CPPSimpleInterval::operator<(const CPPSimpleInterval& other) const {
+bool CPPAbstractSimpleSet::operator>(const CPPAbstractSimpleSet &other){
+    return !operator<=(other);
+}
+
+bool CPPAbstractSimpleSet::operator>=(const CPPAbstractSimpleSet &other){
+    return !operator<(other);
+}
+
+bool CPPAbstractCompositeSet::operator==(const CPPAbstractCompositeSet &other) const {
+    if (simple_sets->size() != other.simple_sets->size()) {
+        return false;
+    }
+    auto it_lhs = simple_sets->begin();
+    auto end_lhs = simple_sets->end();
+    auto it_rhs = other.simple_sets->begin();
+
+    while (it_lhs != end_lhs) {
+        if (**it_lhs != **it_rhs) {
+            return false;
+        }
+        ++it_lhs;
+        ++it_rhs;
+    }
+    return true;
+}
+
+
+bool CPPAbstractCompositeSet::operator!=(const CPPAbstractCompositeSet &other) const {
+    return !operator==(other);
+}
+
+
+
+bool CPPSimpleInterval::operator==(const CPPAbstractSimpleSet &other) override {
+    auto derived_other = (CPPSimpleInterval *) &other;
+    return *this == *derived_other;
+};
+
+bool CPPSimpleInterval::operator==(const CPPSimpleInterval &other) {
+    return lower == other.lower and upper == other.upper and left == other.left and right == other.right;
+};
+
+bool CPPSimpleInterval::operator<(const CPPAbstractSimpleSet &other) override {
+    const auto derived_other = (CPPSimpleInterval *) &other;
+    return *this < *derived_other;
+};
+
+bool CPPSimpleInterval::operator<(const CPPSimpleInterval &other) {
     if (lower == other.lower) {
         return upper < other.upper;
     }
     return lower < other.lower;
-}
+};
 
-bool CPPSimpleInterval::operator==(const CPPSimpleInterval& other) const {
-    return lower == other.lower && upper == other.upper && left == other.left && right == other.right;
-}
+bool CPPSimpleInterval::operator<=(const CPPAbstractSimpleSet &other) override {
+    const auto derived_other = (CPPSimpleInterval *) &other;
+    return *this <= *derived_other;
+};
 
+bool CPPSimpleInterval::operator<=(const CPPSimpleInterval &other) {
+    if (lower == other.lower) {
+        return upper <= other.upper;
+    }
+    return lower <= other.lower;
+};
 
 
 

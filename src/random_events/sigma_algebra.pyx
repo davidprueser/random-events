@@ -2,7 +2,7 @@ from __future__ import annotations
 import itertools
 from sortedcontainers import SortedSet
 from typing_extensions import Self, TYPE_CHECKING, Type, Dict, Any
-
+cimport cython
 from random_events.interval import SimpleInterval
 from random_events.utils import SubclassJSONSerializer
 
@@ -120,9 +120,11 @@ cdef class AbstractCompositeSet:
     def __cinit__(self):
         self.acs_ = new CPPAbstractCompositeSet()
 
-    def __init__(self, *simple_sets):
-        self.simple_sets = SortedSet(simple_sets)
-        self.acs_.simple_sets = cppset[SimpleInterval](self.simple_sets)
+    def __init__(self, *simple_sets_py : SimpleInterval):
+        # self.simple_sets_py = simple_sets_py
+        # self.acs_.simple_sets_cpp = simple_sets_py
+        for simple_set in simple_sets_py:
+            self.acs_.simple_sets.insert(<CPPSimpleInterval> simple_set.si_)
 
     def __dealloc__(self):
         del self.acs_
@@ -321,23 +323,23 @@ cdef class AbstractCompositeSet:
     #             return False
     #     return True
 
-    cdef split_into_disjoint_and_non_disjoint(self):
-        """
-        Split this composite set into disjoint and non-disjoint parts.
-
-        This method is required for making the composite set disjoint.
-        The partitioning is done by removing every other simple set from every simple set.
-        The purified simple sets are then disjoint by definition and the pairwise intersections are (potentially) not
-        disjoint yet.
-
-        This method requires:
-            - the intersection of two simple sets as a simple set
-            - the difference_of_a_with_every_b of a simple set (A) and another simple set (B) that is completely contained in A (B ⊆ A).
-            The result of that difference_of_a_with_every_b has to be a composite set with only one simple set in it.
-
-        :return: A tuple of the disjoint and non-disjoint set.
-        """
-        return self.acs_.split_into_disjoint_and_non_disjoint()
+    # cdef split_into_disjoint_and_non_disjoint(self):
+    #     """
+    #     Split this composite set into disjoint and non-disjoint parts.
+    #
+    #     This method is required for making the composite set disjoint.
+    #     The partitioning is done by removing every other simple set from every simple set.
+    #     The purified simple sets are then disjoint by definition and the pairwise intersections are (potentially) not
+    #     disjoint yet.
+    #
+    #     This method requires:
+    #         - the intersection of two simple sets as a simple set
+    #         - the difference_of_a_with_every_b of a simple set (A) and another simple set (B) that is completely contained in A (B ⊆ A).
+    #         The result of that difference_of_a_with_every_b has to be a composite set with only one simple set in it.
+    #
+    #     :return: A tuple of the disjoint and non-disjoint set.
+    #     """
+    #     return self.acs_.split_into_disjoint_and_non_disjoint()
 
         # initialize result for disjoint and non-disjoint sets
         # cdef AbstractCompositeSet disjoint = self.new_empty_set()
@@ -406,7 +408,7 @@ cdef class AbstractCompositeSet:
     #
     #     return disjoint.simplify()
 
-    # cdef void add_simple_set(self, AbstractSimpleSet simple_set):
+    # cdef void add_simple_set(self, SimpleInterval simple_set):
     #     """
     #     Add a simple set to this composite set if it is not empty.
     #
@@ -414,7 +416,7 @@ cdef class AbstractCompositeSet:
     #     """
     #     if simple_set.is_empty():
     #         return
-    #     self.simple_sets.add(simple_set)
+    #     self.acs_.simple_sets.insert(simple_set.si_)
 
     # def __eq__(self, other: Self):
     #     return self.acs_.simple_sets._list == other.acs_.simple_sets._list

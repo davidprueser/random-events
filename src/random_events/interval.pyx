@@ -48,21 +48,21 @@ cdef class SimpleInterval(AbstractSimpleSet):
     Represents a simple interval.
     """
 
-    def __cinit__(self):
-        self.si_ = new CPPSimpleInterval()
+    def __cinit__(self, float lower = 0, float upper = 0, int left = Bound.OPEN, int right = Bound.OPEN):
+        self.si_ = new CPPSimpleInterval(lower, upper, left, right)
 
-    def __init__(self, float lower = 0, float upper = 0, int left = Bound.OPEN, int right = Bound.OPEN):
-        """
-        Initializes the interval.
-        :param lower: The lower bound of the interval.
-        :param upper: The upper bound of the interval.
-        :param left: The left bound of the interval.
-        :param right: The right bound of the interval.
-        """
-        self.si_.lower = lower
-        self.si_.upper = upper
-        self.si_.left = left
-        self.si_.right = right
+    # def __init__(self, :
+    #     """
+    #     Initializes the interval.
+    #     :param lower: The lower bound of the interval.
+    #     :param upper: The upper bound of the interval.
+    #     :param left: The left bound of the interval.
+    #     :param right: The right bound of the interval.
+    #     """
+    #     self.si_.lower = lower
+    #     self.si_.upper = upper
+    #     self.si_.left = left
+    #     self.si_.right = right
 
     def __dealloc__(self):
         del self.si_

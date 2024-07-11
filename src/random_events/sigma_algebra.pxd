@@ -21,7 +21,6 @@ cdef class AbstractSimpleSet:
 
 cdef class AbstractCompositeSet:
     cdef CPPAbstractCompositeSet *acs_
-    cdef cppset[CPPSimpleInterval] simple_sets
 
     cpdef AbstractCompositeSet simplify(self)
 
@@ -53,8 +52,8 @@ cdef class AbstractCompositeSet:
 
     # cpdef bint is_disjoint(self)
 
-    cdef split_into_disjoint_and_non_disjoint(self)
+    # cdef split_into_disjoint_and_non_disjoint(self)
 
     # cpdef AbstractCompositeSet make_disjoint(self)
 
-    cdef void add_simple_set(self, AbstractSimpleSet simple_set)
+    # cdef void add_simple_set(self, AbstractSimpleSet simple_set)

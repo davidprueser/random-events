@@ -1,4 +1,8 @@
-from libcpp cimport bool, pair, set
+# distutils: sources = simple_interval.cpp
+
+from libcpp.set cimport set
+from libcpp cimport bool
+
 
 cdef extern from "simple_interval.h":
     cdef cppclass CPPAbstractSimpleSet:
@@ -18,7 +22,10 @@ cdef extern from "simple_interval.h":
 
 
     cdef cppclass CPPAbstractCompositeSet:
+        set[CPPAbstractSimpleSet] *simple_sets;
+
         CPPAbstractCompositeSet()
+
 
         # CPPAbstractCompositeSetPtr_t make_new_empty() const
         # CPPAbstractCompositeSet split_into_disjoint_and_non_disjoint()

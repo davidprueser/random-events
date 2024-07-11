@@ -22,7 +22,8 @@ from Cython.Build import cythonize
 setup(
     ext_modules=cythonize(["src/random_events/interval.pyx",
                                      "src/random_events/sigma_algebra.pyx",
-                                     "src/random_events/simple_interval.cpp",],
+                                     ],
                           language="c++",
-                          language_level="3"),
+                          language_level="3",
+                          include_path=["src/random_events"],),
 )
