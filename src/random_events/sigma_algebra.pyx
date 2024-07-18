@@ -2,8 +2,6 @@ from __future__ import annotations
 import itertools
 from sortedcontainers import SortedSet
 from typing_extensions import Self, TYPE_CHECKING, Type, Dict, Any
-cimport cython
-from random_events.interval import SimpleInterval
 from random_events.utils import SubclassJSONSerializer
 
 EMPTY_SET_SYMBOL = "∅"
@@ -51,7 +49,7 @@ cdef class AbstractSimpleSet:
     def __hash__(self):
         raise NotImplementedError
 
-    def non_empty_to_string(self):
+    cdef str non_empty_to_string(self):
         """
         :return: A string representation of this set if it is not empty.
         """
@@ -117,17 +115,17 @@ cdef class AbstractCompositeSet:
     AbstractCompositeSet is a set that is composed of a disjoint union of simple sets.
     """
 
-    def __cinit__(self):
-        self.acs_ = new CPPAbstractCompositeSet()
+    # def __cinit__(self):
+    #     self.acs_ = new CPPAbstractCompositeSet()
+    #
+    # def __init__(self, *simple_sets_py : SimpleInterval):
+    #     # self.simple_sets_py = simple_sets_py
+    #     # self.acs_.simple_sets_cpp = simple_sets_py
+    #     for simple_set in simple_sets_py:
+    #         self.acs_.simple_sets.insert(<CPPSimpleInterval> simple_set.si_)
 
-    def __init__(self, *simple_sets_py : SimpleInterval):
-        # self.simple_sets_py = simple_sets_py
-        # self.acs_.simple_sets_cpp = simple_sets_py
-        for simple_set in simple_sets_py:
-            self.acs_.simple_sets.insert(<CPPSimpleInterval> simple_set.si_)
-
-    def __dealloc__(self):
-        del self.acs_
+    # def __dealloc__(self):
+    #     del self.acs_
 
     # @abstractmethod
     cpdef AbstractCompositeSet simplify(self):

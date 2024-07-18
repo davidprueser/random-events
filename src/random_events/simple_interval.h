@@ -7,84 +7,111 @@
 #include <set>
 
 
-class CPPAbstractSimpleSet;
-class CPPAbstractCompositeSet;
+//FORWARD DECLARE
+class CPPSimpleInterval;
+class CPPInterval;
 
 // TYPE DEFINITIONS
 template<typename T>
 struct PointerLess {
-    bool operator()(const T lhs, const T rhs) const {
+    bool operator()(const T lhs,
+                    const T rhs) const {
         return *lhs < *rhs;
     }
 
 };
 
-typedef std::shared_ptr<CPPAbstractCompositeSet> CPPAbstractCompositeSetPtr_t;
-typedef std::shared_ptr<CPPAbstractSimpleSet> CPPAbstractSimpleSetPtr_t;
 
-typedef std::set<CPPAbstractSimpleSetPtr_t, PointerLess<CPPAbstractSimpleSetPtr_t>> CPPSimpleSetSet_t;
-typedef std::shared_ptr<CPPSimpleSetSet_t> CPPSimpleSetSetPtr_t;
+// TYPEDEFS
+typedef std::shared_ptr<CPPSimpleInterval> CPPSimpleIntervalPtr_t;
+typedef std::shared_ptr<CPPInterval> CPPIntervalPtr_t;
+typedef std::set<CPPSimpleIntervalPtr_t, PointerLess<CPPSimpleIntervalPtr_t>> SimpleIntervalSet_t;
+typedef std::shared_ptr<SimpleIntervalSet_t> SimpleIntervalSetPtr_t;
 
-class CPPAbstractSimpleSet {
-public:
-    virtual ~CPPAbstractSimpleSet() = default;
-    bool operator!=(const CPPAbstractSimpleSet& other) const;
-    bool operator>(const CPPAbstractSimpleSet& other) const;
-    bool operator>=(const CPPAbstractSimpleSet& other) const;
-    bool operator==(const CPPAbstractSimpleSet& other) const;
-    bool operator!=(const CPPAbstractSimpleSetPtr_t &other) const;
-    virtual bool operator==(const CPPAbstractSimpleSet &other)= 0;
-    virtual bool operator<(const CPPAbstractSimpleSet &other)= 0;
-    virtual bool operator<=(const CPPAbstractSimpleSet &other)= 0;
+
+template<typename... Args>
+SimpleIntervalSetPtr_t make_shared_simple_interval_set(Args&&... args) {
+    return std::make_shared<SimpleIntervalSet_t>(std::forward<Args>(args)...);
+}
+
+static std::string EMPTY_SET_SYMBOL = "∅";
+
+union ElementaryVariant {
+    float f;
+    int i;
+    std::string s;
 };
 
-class CPPSimpleInterval : public CPPAbstractSimpleSet{
+
+
+enum class BorderType {
+    /**
+     * Open indicates that a value is included in the interval.
+     */
+    OPEN,
+
+    /**
+     * Close indicates that a value is excluded in the interval.
+     */
+    CLOSED
+};
+
+class CPPSimpleInterval: public std::enable_shared_from_this<CPPSimpleInterval>{
 public:
     float lower;
     float upper;
-    int left;
-    int right;
+    BorderType left;
+    BorderType right;
 
-    explicit CPPSimpleInterval(float lower = 0, float upper = 0, int left = 0, int right = 0) {
+    explicit CPPSimpleInterval(float lower = 0, float upper = 0, BorderType left = BorderType::OPEN, BorderType right = BorderType::OPEN) {
         this->lower = lower;
         this->upper = upper;
         this->left = left;
         this->right = right;
-    }
-    bool operator==(const CPPAbstractSimpleSet& other) const;
-    bool operator==(const CPPSimpleInterval& other) const;
-    bool operator<(const CPPAbstractSimpleSet& other) const;
-    bool operator<(const CPPSimpleInterval& other) const;
-    bool operator<=(const CPPAbstractSimpleSet& other) const;
-    bool operator<=(const CPPSimpleInterval& other) const;
+
+}
+
+    bool operator==(const CPPSimpleInterval &other) const;
+    bool operator<(const CPPSimpleInterval &other) const;
+    bool operator<=(const CPPSimpleInterval &other) const;
+    bool operator!=(const CPPSimpleInterval &other) const;
+
+    template<typename... Args>
+    static CPPSimpleIntervalPtr_t make_shared(Args &&... args) {
+        return std::make_shared<CPPSimpleInterval>(std::forward<Args>(args)...);
+    };
+
+
+    bool is_empty();
+    bool is_singleton();
+    CPPSimpleIntervalPtr_t intersection_with(const CPPSimpleIntervalPtr_t &other);
+    SimpleIntervalSetPtr_t complement();
+    std::string non_empty_to_string();
+
 };
 
-class CPPAbstractCompositeSet {
+
+class CPPInterval{
 public:
-    std::set<CPPAbstractSimpleSet> *simple_sets;
+    SimpleIntervalSetPtr_t simple_sets;
 
-    CPPAbstractCompositeSet() = default;
+    CPPInterval() {
+        this->simple_sets = make_shared_simple_interval_set();
+    };
 
-    virtual ~CPPAbstractCompositeSet() {
-        simple_sets->clear();
+    explicit CPPInterval(const SimpleIntervalSetPtr_t &simple_sets_){
+        this->simple_sets = simple_sets_;
+    }
+    explicit CPPInterval(SimpleIntervalSetPtr_t &simple_sets_){
+        this->simple_sets = simple_sets_;
+    }
+    explicit CPPInterval(const CPPSimpleInterval &simple_interval){
+        simple_sets->insert(std::make_shared<CPPSimpleInterval>(simple_interval));
     }
 
+    bool operator==(const CPPInterval &other) const;
+    bool operator!=(const CPPInterval &other) const;
 
-    virtual CPPAbstractCompositeSetPtr_t make_new_empty() const = 0;
-    CPPAbstractCompositeSetPtr_t union_with(const CPPAbstractCompositeSet& other) const;
-    CPPAbstractCompositeSetPtr_t intersection_with_simple_set(const CPPAbstractSimpleSet& other) const;
-    CPPAbstractCompositeSetPtr_t make_disjoint() const;
-    std::tuple<CPPAbstractCompositeSetPtr_t, CPPAbstractCompositeSetPtr_t> split_into_disjoint_and_non_disjoint();
-    CPPAbstractCompositeSetPtr_t make_disjoint();
-    CPPAbstractCompositeSetPtr_t intersection_with(const CPPAbstractSimpleSetPtr_t &simple_set);
-    CPPAbstractCompositeSetPtr_t intersection_with(const CPPSimpleSetSetPtr_t &other);
-    CPPAbstractCompositeSetPtr_t intersection_with(const CPPAbstractCompositeSetPtr_t &other);
-    CPPAbstractCompositeSetPtr_t complement();
-    CPPAbstractCompositeSetPtr_t union_with(const CPPAbstractSimpleSetPtr_t &other) const;
-    CPPAbstractCompositeSetPtr_t union_with(const CPPAbstractCompositeSetPtr_t &other);
-    CPPAbstractCompositeSetPtr_t difference_with(const CPPAbstractSimpleSetPtr_t &other);
-    CPPAbstractCompositeSetPtr_t difference_with(const CPPAbstractCompositeSetPtr_t &other);
-    bool contains(const CPPAbstractCompositeSetPtr_t &other);
 };
 
 #endif

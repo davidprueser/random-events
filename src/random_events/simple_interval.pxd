@@ -1,35 +1,48 @@
 # distutils: sources = simple_interval.cpp
-
+from libcpp.string cimport string
 from libcpp.set cimport set
 from libcpp cimport bool
+from libcpp.memory cimport shared_ptr
 
 
 cdef extern from "simple_interval.h":
-    cdef cppclass CPPAbstractSimpleSet:
-        pass
+    cdef enum BorderType:
+        OPEN
+        CLOSED
 
+    ctypedef shared_ptr[CPPSimpleInterval] CPPSimpleIntervalPtr_t
+    ctypedef shared_ptr[CPPInterval] CPPIntervalPtr_t
+    ctypedef set[CPPSimpleIntervalPtr_t] SimpleIntervalSet_t
+    ctypedef shared_ptr[SimpleIntervalSet_t] SimpleIntervalSetPtr_t
 
-    cdef cppclass CPPSimpleInterval(CPPAbstractSimpleSet):
+    cdef cppclass CPPSimpleInterval:
         float lower
         float upper
-        int left
-        int right
+        BorderType left
+        BorderType right
 
         CPPSimpleInterval()
-        CPPSimpleInterval(float lower, float upper, int left , int right)
-        bool operator<(const CPPSimpleInterval& other) const
-        bool operator==(const CPPSimpleInterval& other) const
+        CPPSimpleInterval(float lower, float upper, BorderType left, BorderType right)
+        bool operator==(const CPPSimpleInterval &other) const
+        bool operator<(const CPPSimpleInterval &other) const
+        bool operator<=(const CPPSimpleInterval &other) const
+        bool operator!=(const CPPSimpleInterval &other) const
 
 
-    cdef cppclass CPPAbstractCompositeSet:
-        set[CPPAbstractSimpleSet] *simple_sets;
+        bool is_empty()
+        bool is_singleton()
+        CPPSimpleIntervalPtr_t intersection_with(const CPPSimpleIntervalPtr_t &other)
+        SimpleIntervalSetPtr_t complement()
+        string non_empty_to_string()
 
-        CPPAbstractCompositeSet()
 
+    cdef cppclass CPPInterval:
+        SimpleIntervalSetPtr_t simple_sets;
 
-        # CPPAbstractCompositeSetPtr_t make_new_empty() const
-        # CPPAbstractCompositeSet split_into_disjoint_and_non_disjoint()
-        # CPPAbstractCompositeSet
-        # CPPAbstractCompositeSet
-        # CPPAbstractCompositeSet
-        # CPPAbstractCompositeSet
+        CPPInterval()
+        CPPInterval(const SimpleIntervalSetPtr_t &simple_sets_)
+        CPPInterval(SimpleIntervalSetPtr_t &simple_sets_)
+        CPPInterval(CPPSimpleInterval &simple_interval)
+
+        bool operator==(const CPPInterval &other) const
+        bool operator!=(const CPPInterval &other) const

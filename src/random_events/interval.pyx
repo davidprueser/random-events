@@ -48,24 +48,28 @@ cdef class SimpleInterval(AbstractSimpleSet):
     Represents a simple interval.
     """
 
-    def __cinit__(self, float lower = 0, float upper = 0, int left = Bound.OPEN, int right = Bound.OPEN):
-        self.si_ = new CPPSimpleInterval(lower, upper, left, right)
+    def __cinit__(self, ):
+        self.si_ = CPPSimpleInterval()
 
-    # def __init__(self, :
-    #     """
-    #     Initializes the interval.
-    #     :param lower: The lower bound of the interval.
-    #     :param upper: The upper bound of the interval.
-    #     :param left: The left bound of the interval.
-    #     :param right: The right bound of the interval.
-    #     """
-    #     self.si_.lower = lower
-    #     self.si_.upper = upper
-    #     self.si_.left = left
-    #     self.si_.right = right
+    def __init__(self, float lower = 0, float upper = 0, int left = Bound.OPEN, int right = Bound.OPEN):
+        """
+        Initializes the interval.
+        :param lower: The lower bound of the interval.
+        :param upper: The upper bound of the interval.
+        :param left: The left bound of the interval.
+        :param right: The right bound of the interval.
+        """
+        self.si_.lower = lower
+        self.si_.upper = upper
+        self.si_.left = <BorderType>left
+        self.si_.right = <BorderType>right
 
     def __dealloc__(self):
-        del self.si_
+        pass
+        # del self.si_
+
+    cdef shared_ptr[CPPSimpleInterval] as_cpp_simple_interval(self):
+        return make_shared[CPPSimpleInterval](self.si_)
 
     def __hash__(self):
         return hash((self.si_.lower, self.si_.upper, self.si_.left,
@@ -86,82 +90,41 @@ cdef class SimpleInterval(AbstractSimpleSet):
         return Interval(self)
 
     cpdef bint is_empty(self) except *:
-        return self.si_.lower > self.si_.upper or (
-                self.si_.lower == self.si_.upper and (self.si_.left == Bound.OPEN or self.si_.right == Bound.OPEN))
+        return self.si_.is_empty()
 
-    cpdef bint is_singleton(self) except *:
+    cpdef bint is_singleton(self):
         """
         :return: True if the interval is a singleton (contains only one value), False otherwise.
         """
-        return self.si_.lower == self.si_.upper and self.si_.left == Bound.CLOSED and self.si_.right == Bound.CLOSED
+        return self.si_.is_singleton()
+
+    cdef SimpleInterval _from_cpp_si(self, CPPSimpleIntervalPtr_t si):
+        cdef SimpleInterval sio = SimpleInterval.__new__(SimpleInterval)
+        sio.si_ = si.get()[0]
+        return sio
+
+    cdef set[SimpleInterval] _from_cpp_si_set(self, SimpleIntervalSetPtr_t si):
+        cdef set[SimpleInterval] py_simple_intervals = set[SimpleInterval]()
+        for simple_interval in si.get()[0]:
+            sio = self._from_cpp_si(simple_interval)
+            sio.si_ = simple_interval.get()[0]
+            py_simple_intervals.add(sio)
+        return py_simple_intervals
 
     cpdef SimpleInterval intersection_with_cpp(self, SimpleInterval other):
+        return self._from_cpp_si(self.si_.intersection_with(make_shared[CPPSimpleInterval](other.si_)))
 
-        # create new limits for the intersection
-        cdef float new_lower = max(self.si_.lower, other.si_.lower)
-        cdef float new_upper = min(self.si_.upper, other.si_.upper)
-
-        # if the new limits are not valid, return an empty interval
-        if new_lower > new_upper:
-            return SimpleInterval()
-
-        # create the new left bound
-        if self.si_.lower == other.si_.lower:
-            new_left: int = Bound.intersect(self.si_.left, other.si_.left)
-        else:
-            new_left: int = self.si_.left if self.si_.lower > other.si_.lower \
-                else other.si_.left
-
-        # create the new right bound
-        if self.si_.upper == other.si_.upper:
-            new_right: int = Bound.intersect(self.si_.right, other.si_.right)
-        else:
-            new_right: int = self.si_.right if self.si_.upper < other.si_.upper \
-                else other.si_.right
-
-        return SimpleInterval(new_lower, new_upper, new_left, new_right)
-
-    cdef cppset[CPPSimpleInterval] complement_cpp(self):
-        cdef cppset[CPPSimpleInterval] result
-
-        # if the interval is empty
-        if self.is_empty():
-            # return the real line
-            result.insert(CPPSimpleInterval(float('-inf'), float('inf'), Bound.OPEN, Bound.OPEN))
-            return result
-
-        result = cppset[CPPSimpleInterval]()
+    cpdef set[SimpleInterval] complement_cpp(self):
+        return self._from_cpp_si_set(self.si_.complement())
 
 
-        # if this is the real line
-        if self.si_.lower == float('-inf') and self.si_.upper == float('inf'):
-            # return the empty set
-            return result
-
-        # if the lower bound is not negative infinity
-        if self.si_.lower > float('-inf'):
-            # add the interval from minus infinity to the lower bound
-            result.insert(CPPSimpleInterval(float('-inf'), self.si_.lower, Bound.OPEN, Bound.invert(self.si_.left)))
-
-        # if the upper bound is not positive infinity
-        if self.si_.upper < float('inf'):
-            # add the interval from the upper bound to infinity
-            result.insert(CPPSimpleInterval(self.si_.upper, float('inf'), Bound.invert(self.si_.right), Bound.OPEN))
-
-        return result
-
-    cpdef bint contains(self, float item) except *:
-        return (self.si_.lower < item < self.si_.upper or (self.si_.lower == item and self.si_.left == Bound.CLOSED) or (
-                self.si_.upper == item and self.si_.right == Bound.CLOSED))
+    # cpdef bint contains(self, float item) except *:
+    #     return (self.si_.lower < item < self.si_.upper or (self.si_.lower == item and self.si_.left == BorderType.CLOSED) or (
+    #             self.si_.upper == item and self.si_.right == BorderType.CLOSED))
 
     # can be used if bound is a c object not a python class
-    def non_empty_to_string(self):
-        left_bracket = '[' if self.si_.left == 1 else '('
-        right_bracket = ']' if self.si_.right == 1 else ')'
-        return f'{left_bracket}{self.si_.lower}, {self.si_.upper}{right_bracket}'
-        # cdef left_bracket = '[' if self.left == Bound.CLOSED else '('
-        # cdef right_bracket = ']' if self.right == Bound.CLOSED else ')'
-        # return printf("%s%f, %f%s", left_bracket, self.lower, self.upper, right_bracket)
+    cdef str non_empty_to_string(self):
+        return self.si_.non_empty_to_string().decode('utf-8', 'replace')
 
     cpdef float center(self):
         """
@@ -169,17 +132,28 @@ cdef class SimpleInterval(AbstractSimpleSet):
         """
         return ((self.si_.lower + self.si_.upper) / 2) + self.si_.lower
 
-class SimpleIntervalPy(SubclassJSONSerializer, SimpleInterval):
-
-    def to_json(self) -> Dict[str, Any]:
-        return {**super().to_json(), 'lower': self.si_.lower, 'upper': self.si_.upper, 'left': Bound.get_name(self.si_.left),
-                'right': Bound.get_name(self.si_.right)}
-    @classmethod
-    def _from_json(cls, data: Dict[str, Any]) -> Self:
-        return cls(data['lower'], data['upper'], Bound[data['left']], Bound[data['right']])
-
+# class SimpleIntervalPy(SubclassJSONSerializer, SimpleInterval):
+#
+#     def to_json(self) -> Dict[str, Any]:
+#         return {**super().to_json(), 'lower': self.si_.lower, 'upper': self.si_.upper, 'left': Bound.get_name(self.si_.left),
+#                 'right': Bound.get_name(self.si_.right)}
+#     @classmethod
+#     def _from_json(cls, data: Dict[str, Any]) -> Self:
+#         return cls(data['lower'], data['upper'], Bound[data['left']], Bound[data['right']])
+#
 
 cdef class Interval(AbstractCompositeSet):
+    def __cinit__(self):
+        self.i_ = new CPPInterval()
+
+    def __init__(self, *simple_sets_py):
+        cdef SimpleInterval simple_set
+        for simple_set in simple_sets_py:
+            cpp_simple_interval = simple_set.as_cpp_simple_interval()
+            self.i_.simple_sets.get().insert(cpp_simple_interval)
+
+    def __dealloc__(self):
+        del self.i_
 
     # cpdef Interval simplify(self):
     #
@@ -216,12 +190,13 @@ cdef class Interval(AbstractCompositeSet):
 
     cpdef Interval complement_if_empty(self):
         return Interval([SimpleInterval(float('-inf'), float('inf'), Bound.OPEN, Bound.OPEN)])
+            # CPPInterval([CPPSimpleInterval(float('-inf'), float('inf'), Bound.OPEN, Bound.OPEN)]))
 
     # cpdef bint is_singleton(self):
     #     """
     #     :return: True if the interval is a singleton (contains only one value), False otherwise.
     #     """
-    #     return self.simple_sets.size() == 1 and self.simple_sets.begin().is_singleton()
+    #     return self.i_.simple_sets.size() == 1 and self.i_.simple_sets[0].is_singleton()
 
 
 cpdef Interval open(float left, float right):

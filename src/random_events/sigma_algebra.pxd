@@ -1,4 +1,4 @@
-from random_events.simple_interval cimport CPPAbstractSimpleSet, CPPSimpleInterval, CPPAbstractCompositeSet
+from random_events.simple_interval cimport CPPSimpleInterval, CPPInterval
 from libcpp.set cimport set as cppset
 
 cdef class AbstractSimpleSet:
@@ -10,7 +10,7 @@ cdef class AbstractSimpleSet:
 
     cpdef bint contains(self, float item) except *
 
-    # cpdef str non_empty_to_string(self)
+    cdef str non_empty_to_string(self)
 
     cpdef difference_with(self, AbstractSimpleSet other)
 
@@ -20,7 +20,7 @@ cdef class AbstractSimpleSet:
 
 
 cdef class AbstractCompositeSet:
-    cdef CPPAbstractCompositeSet *acs_
+    # cdef CPPAbstractCompositeSet *acs_
 
     cpdef AbstractCompositeSet simplify(self)
 

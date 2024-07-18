@@ -26,29 +26,35 @@ class CythonTestCase(unittest.TestCase):
         from random_events.interval import SimpleInterval, Interval, Bound
 
         t1 = time.time()
-        i = Interval(SimpleInterval(0, 1))
-        complement = i.make_disjoint()
+        com = None
+        # complement = i.make_disjoint()
         for i in range(500000):
-            i = Interval(SimpleInterval(0, 1))
-            complement = i.make_disjoint()
+            si = SimpleInterval(0, 1, Bound.OPEN, Bound.CLOSED)
+            com = si.complement_cpp()
+            # complement = i.make_disjoint()
 
-        print(i)
-        print(complement)
-        print(f"cython {time.time() - t1}")
+        print(com)
+        # print(complement)
+        totcy = time.time() - t1
+        print(f"cython {totcy}")
+        print("---------------------------------")
 
     def test_complement_python(self):
         from random_events.interval_old import SimpleInterval, Interval, Bound
 
         t1 = time.time()
-        i = Interval(SimpleInterval(0, 1))
-        complement = i.make_disjoint()
+        com = None
+        # complement = i.make_disjoint()
         for i in range(500000):
-            i = Interval(SimpleInterval(0, 1))
-            complement = i.make_disjoint()
+            si = SimpleInterval(0, 1, Bound.OPEN, Bound.CLOSED)
+            com = si.complement()
+            # complement = i.make_disjoint()
 
-        print(i)
-        print(complement)
-        print(f"cython {time.time() - t1}")
+        print(com)
+        # print(complement)
+        totpy = time.time() - t1
+        print(f"python {totpy}")
+        print("---------------------------------")
 
 
 if __name__ == '__main__':
