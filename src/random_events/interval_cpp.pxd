@@ -1,11 +1,11 @@
-# distutils: sources = simple_interval.cpp
+# distutils: sources = interval_cpp.cpp
 from libcpp.string cimport string
 from libcpp.set cimport set
 from libcpp cimport bool
 from libcpp.memory cimport shared_ptr
 
 
-cdef extern from "simple_interval.h":
+cdef extern from "interval_cpp.h":
     cdef enum BorderType:
         OPEN
         CLOSED
@@ -34,6 +34,7 @@ cdef extern from "simple_interval.h":
         CPPSimpleIntervalPtr_t intersection_with(const CPPSimpleIntervalPtr_t &other)
         SimpleIntervalSetPtr_t complement()
         string non_empty_to_string()
+        bool contains(float x)
 
 
     cdef cppclass CPPInterval:
@@ -46,3 +47,5 @@ cdef extern from "simple_interval.h":
 
         bool operator==(const CPPInterval &other) const
         bool operator!=(const CPPInterval &other) const
+
+        CPPIntervalPtr_t simplify()

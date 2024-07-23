@@ -27,11 +27,11 @@ class CythonTestCase(unittest.TestCase):
 
         t1 = time.time()
         com = None
-        # complement = i.make_disjoint()
+        inter = Interval(SimpleInterval(0, 0, Bound.CLOSED, Bound.CLOSED))
         for i in range(500000):
             si = SimpleInterval(0, 1, Bound.OPEN, Bound.CLOSED)
             com = si.complement_cpp()
-            # complement = i.make_disjoint()
+        self.assertTrue(inter.is_singleton())
 
         print(com)
         # print(complement)
@@ -42,18 +42,19 @@ class CythonTestCase(unittest.TestCase):
     def test_complement_python(self):
         from random_events.interval_old import SimpleInterval, Interval, Bound
 
+
         t1 = time.time()
         com = None
-        # complement = i.make_disjoint()
+        inter = Interval(SimpleInterval(0, 0, Bound.CLOSED, Bound.CLOSED))
         for i in range(500000):
             si = SimpleInterval(0, 1, Bound.OPEN, Bound.CLOSED)
             com = si.complement()
-            # complement = i.make_disjoint()
+        self.assertTrue(inter.is_singleton())
 
         print(com)
         # print(complement)
-        totpy = time.time() - t1
-        print(f"python {totpy}")
+        totcy = time.time() - t1
+        print(f"cython {totcy}")
         print("---------------------------------")
 
 

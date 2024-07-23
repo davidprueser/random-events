@@ -1,6 +1,6 @@
 #include <iostream>
 #include <limits>
-#include "simple_interval.h"
+#include "interval_cpp.h"
 
 /**
  * Logically intersect borders.
@@ -131,6 +131,26 @@ std::string CPPSimpleInterval::non_empty_to_string(){
     return std::string(1, left_representation) + std::to_string(lower) + ", " + std::to_string(upper) + std::string(1, right_representation);
 };
 
+bool CPPSimpleInterval::contains(float element) const {
+    if (left == BorderType::OPEN and element <= lower) {
+        return false;
+    }
+
+    if (right == BorderType::OPEN and element >= upper) {
+        return false;
+    }
+
+    if (left == BorderType::CLOSED and element < lower) {
+        return false;
+    }
+
+    if (right == BorderType::CLOSED and element > upper) {
+        return false;
+    }
+
+    return true;
+};
+
 
 
 
@@ -155,3 +175,32 @@ bool CPPInterval::operator==(const CPPInterval &other) const{
 bool CPPInterval::operator!=(const CPPInterval &other) const{
     return !operator==(other);
 }
+
+CPPIntervalPtr_t CPPInterval::simplify(){
+    auto result = make_shared_simple_interval_set();
+    bool first_iteration = true;
+
+    for (const auto &current_simple_set: *simple_sets) {
+        auto current_simple_interval = std::static_pointer_cast<CPPSimpleInterval>(current_simple_set);
+
+        // if this is the first iteration, just copy the interval
+        if (first_iteration) {
+            result->insert(current_simple_interval);
+            first_iteration = false;
+            continue;
+        }
+
+        auto last_simple_interval = std::dynamic_pointer_cast<CPPSimpleInterval>(*result->rbegin());
+
+        if (last_simple_interval->upper == current_simple_interval->lower &&
+            !(last_simple_interval->right == BorderType::OPEN and
+              current_simple_interval->left == BorderType::OPEN)) {
+            last_simple_interval->upper = current_simple_interval->upper;
+            last_simple_interval->right = current_simple_interval->right;
+        } else {
+            result->insert(current_simple_interval);
+        }
+    }
+
+    return CPPInterval::make_shared(result);
+};

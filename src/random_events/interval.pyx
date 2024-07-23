@@ -1,5 +1,5 @@
 # distutils: language = c++
-# distutils: sources = src/random_events/simple_interval.cpp
+# distutils: sources = src/random_events/interval_cpp.cpp
 from __future__ import annotations
 from sortedcontainers import SortedSet
 from typing_extensions import Dict, Any, Self
@@ -68,7 +68,7 @@ cdef class SimpleInterval(AbstractSimpleSet):
         pass
         # del self.si_
 
-    cdef shared_ptr[CPPSimpleInterval] as_cpp_simple_interval(self):
+    cdef CPPSimpleIntervalPtr_t as_cpp_simple_interval(self):
         return make_shared[CPPSimpleInterval](self.si_)
 
     def __hash__(self):
@@ -103,24 +103,24 @@ cdef class SimpleInterval(AbstractSimpleSet):
         sio.si_ = si.get()[0]
         return sio
 
-    cdef set[SimpleInterval] _from_cpp_si_set(self, SimpleIntervalSetPtr_t si):
+    cdef _from_cpp_si_set(self, SimpleIntervalSetPtr_t si):
         cdef set[SimpleInterval] py_simple_intervals = set[SimpleInterval]()
         for simple_interval in si.get()[0]:
             sio = self._from_cpp_si(simple_interval)
             sio.si_ = simple_interval.get()[0]
             py_simple_intervals.add(sio)
-        return py_simple_intervals
+        py_sorted_simple_intervals = SortedSet(py_simple_intervals)
+        return py_sorted_simple_intervals
 
     cpdef SimpleInterval intersection_with_cpp(self, SimpleInterval other):
         return self._from_cpp_si(self.si_.intersection_with(make_shared[CPPSimpleInterval](other.si_)))
 
-    cpdef set[SimpleInterval] complement_cpp(self):
+    cpdef complement_cpp(self):
         return self._from_cpp_si_set(self.si_.complement())
 
 
-    # cpdef bint contains(self, float item) except *:
-    #     return (self.si_.lower < item < self.si_.upper or (self.si_.lower == item and self.si_.left == BorderType.CLOSED) or (
-    #             self.si_.upper == item and self.si_.right == BorderType.CLOSED))
+    cpdef bint contains(self, float item) except *:
+        return self.si_.contains(item)
 
     # can be used if bound is a c object not a python class
     cdef str non_empty_to_string(self):
@@ -132,72 +132,70 @@ cdef class SimpleInterval(AbstractSimpleSet):
         """
         return ((self.si_.lower + self.si_.upper) / 2) + self.si_.lower
 
-# class SimpleIntervalPy(SubclassJSONSerializer, SimpleInterval):
-#
-#     def to_json(self) -> Dict[str, Any]:
-#         return {**super().to_json(), 'lower': self.si_.lower, 'upper': self.si_.upper, 'left': Bound.get_name(self.si_.left),
-#                 'right': Bound.get_name(self.si_.right)}
-#     @classmethod
-#     def _from_json(cls, data: Dict[str, Any]) -> Self:
-#         return cls(data['lower'], data['upper'], Bound[data['left']], Bound[data['right']])
-#
+class SimpleIntervalPy(SubclassJSONSerializer, SimpleInterval):
+
+    def to_json(self) -> Dict[str, Any]:
+        return {**super().to_json(), 'lower': self.si_.lower, 'upper': self.si_.upper, 'left': Bound.get_name(self.si_.left),
+                'right': Bound.get_name(self.si_.right)}
+    @classmethod
+    def _from_json(cls, data: Dict[str, Any]) -> Self:
+        return cls(data['lower'], data['upper'], Bound[data['left']], Bound[data['right']])
+
 
 cdef class Interval(AbstractCompositeSet):
     def __cinit__(self):
         self.i_ = new CPPInterval()
 
     def __init__(self, *simple_sets_py):
+        self.simple_sets_py = SortedSet(simple_sets_py)
         cdef SimpleInterval simple_set
-        for simple_set in simple_sets_py:
-            cpp_simple_interval = simple_set.as_cpp_simple_interval()
-            self.i_.simple_sets.get().insert(cpp_simple_interval)
+        for simple_set in self.simple_sets_py:
+            self.i_.simple_sets.get().insert(simple_set.as_cpp_simple_interval())
 
     def __dealloc__(self):
         del self.i_
 
-    # cpdef Interval simplify(self):
-    #
-    #     # if the set is empty, return it
-    #     if self.is_empty():
-    #         return self
-    #
-    #     # initialize the result
-    #     result: Interval = self.simple_sets[0].as_composite_set()
-    #
-    #     # iterate over the simple sets
-    #     for current_simple_interval in self.simple_sets[1:]:
-    #
-    #         # get the last element in the result
-    #         last_simple_interval : SortedSet[SimpleInterval] = result.simple_sets[-1]
-    #
-    #         # if the borders are connected
-    #         if (last_simple_interval.upper > current_simple_interval.lower or (
-    #                 last_simple_interval.upper == current_simple_interval.lower and not (
-    #                 last_simple_interval.right == Bound.OPEN and current_simple_interval.left == Bound.OPEN))):
-    #
-    #             # extend the upper bound of the last element
-    #             last_simple_interval.upper = current_simple_interval.upper
-    #             last_simple_interval.right = current_simple_interval.right
-    #         else:
-    #
-    #             # add the current element to the result
-    #             result.simple_sets.insert(current_simple_interval)
-    #
-    #     return result
+    def __eq__(self, Interval other):
+        return self.i_ == other.i_
+
+    cdef Interval _from_cpp_interval(self, CPPIntervalPtr_t interval):
+        cdef Interval io = Interval.__new__(Interval)
+        io.i_ = interval.get()
+        return io
+
+    cdef SimpleInterval _from_cpp_si(self, CPPSimpleIntervalPtr_t si):
+        cdef SimpleInterval sio = SimpleInterval.__new__(SimpleInterval)
+        sio.si_ = si.get()[0]
+        return sio
+
+    cdef _from_cpp_si_set(self, SimpleIntervalSetPtr_t si):
+        py_simple_intervals = SortedSet[SimpleInterval]()
+        for simple_interval in si.get()[0]:
+            sio = self._from_cpp_si(simple_interval)
+            sio.si_ = simple_interval.get()[0]
+            py_simple_intervals.add(sio)
+        return py_simple_intervals
+
+
+    cpdef Interval simplify(self):
+        return self._from_cpp_interval(self.i_.simplify())
 
     cpdef Interval new_empty_set(self):
         return Interval()
 
     cpdef Interval complement_if_empty(self):
         return Interval([SimpleInterval(float('-inf'), float('inf'), Bound.OPEN, Bound.OPEN)])
-            # CPPInterval([CPPSimpleInterval(float('-inf'), float('inf'), Bound.OPEN, Bound.OPEN)]))
 
-    # cpdef bint is_singleton(self):
-    #     """
-    #     :return: True if the interval is a singleton (contains only one value), False otherwise.
-    #     """
-    #     return self.i_.simple_sets.size() == 1 and self.i_.simple_sets[0].is_singleton()
+    cpdef bint is_singleton(self):
+        """
+        :return: True if the interval is a singleton (contains only one value), False otherwise.
+        """
 
+        if self.i_.simple_sets.get().size() == 1:
+            first_elem = self._from_cpp_si_set(self.i_.simple_sets)[0]
+            return first_elem.is_singleton()
+
+        return False
 
 cpdef Interval open(float left, float right):
     """

@@ -87,6 +87,7 @@ public:
     CPPSimpleIntervalPtr_t intersection_with(const CPPSimpleIntervalPtr_t &other);
     SimpleIntervalSetPtr_t complement();
     std::string non_empty_to_string();
+    bool contains(float element) const;
 
 };
 
@@ -112,6 +113,12 @@ public:
     bool operator==(const CPPInterval &other) const;
     bool operator!=(const CPPInterval &other) const;
 
+    template<typename... Args>
+    static std::shared_ptr<CPPInterval> make_shared(Args &&... args) {
+        return std::make_shared<CPPInterval>(std::forward<Args>(args)...);
+    }
+
+    CPPIntervalPtr_t simplify();
 };
 
 #endif

@@ -1,4 +1,4 @@
-from random_events.simple_interval cimport CPPSimpleInterval, CPPInterval
+from random_events.interval_cpp cimport CPPSimpleInterval, CPPInterval
 from libcpp.set cimport set as cppset
 
 cdef class AbstractSimpleSet:
