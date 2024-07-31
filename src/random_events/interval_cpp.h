@@ -1,47 +1,18 @@
-// CPPAbstractCompositeSet.h
+#pragma once
 
-#ifndef SIMPLE_INTERVAL_H
-#define SIMPLE_INTERVAL_H
-#include <functional>
+#include "sigma_algebra_cpp.h"
 #include <memory>
-#include <set>
-
+#include <utility>
+#include <limits>
 
 //FORWARD DECLARE
 class CPPSimpleInterval;
 class CPPInterval;
 
-// TYPE DEFINITIONS
-template<typename T>
-struct PointerLess {
-    bool operator()(const T lhs,
-                    const T rhs) const {
-        return *lhs < *rhs;
-    }
-
-};
-
 
 // TYPEDEFS
 typedef std::shared_ptr<CPPSimpleInterval> CPPSimpleIntervalPtr_t;
 typedef std::shared_ptr<CPPInterval> CPPIntervalPtr_t;
-typedef std::set<CPPSimpleIntervalPtr_t, PointerLess<CPPSimpleIntervalPtr_t>> SimpleIntervalSet_t;
-typedef std::shared_ptr<SimpleIntervalSet_t> SimpleIntervalSetPtr_t;
-
-
-template<typename... Args>
-SimpleIntervalSetPtr_t make_shared_simple_interval_set(Args&&... args) {
-    return std::make_shared<SimpleIntervalSet_t>(std::forward<Args>(args)...);
-}
-
-static std::string EMPTY_SET_SYMBOL = "∅";
-
-union ElementaryVariant {
-    float f;
-    int i;
-    std::string s;
-};
-
 
 
 enum class BorderType {
@@ -56,7 +27,7 @@ enum class BorderType {
     CLOSED
 };
 
-class CPPSimpleInterval: public std::enable_shared_from_this<CPPSimpleInterval>{
+class CPPSimpleInterval: public CPPAbstractSimpleSet {
 public:
     float lower;
     float upper;
@@ -71,10 +42,12 @@ public:
 
 }
 
+    bool operator==(const CPPAbstractSimpleSet &other) override;
     bool operator==(const CPPSimpleInterval &other) const;
+    bool operator<(const CPPAbstractSimpleSet &other) override;
     bool operator<(const CPPSimpleInterval &other) const;
+    bool operator<=(const CPPAbstractSimpleSet &other) override;
     bool operator<=(const CPPSimpleInterval &other) const;
-    bool operator!=(const CPPSimpleInterval &other) const;
 
     template<typename... Args>
     static CPPSimpleIntervalPtr_t make_shared(Args &&... args) {
@@ -82,32 +55,36 @@ public:
     };
 
 
-    bool is_empty();
+    bool is_empty() override;
     bool is_singleton();
-    CPPSimpleIntervalPtr_t intersection_with(const CPPSimpleIntervalPtr_t &other);
-    SimpleIntervalSetPtr_t complement();
-    std::string non_empty_to_string();
+    CPPAbstractSimpleSetPtr_t intersection_with(const CPPAbstractSimpleSetPtr_t &other) override;
+    SimpleSetSetPtr_t complement() override;
+    std::string *non_empty_to_string() override;
+    bool contains(const ElementaryVariant *element) override;
     bool contains(float element) const;
 
 };
 
 
-class CPPInterval{
+class CPPInterval: public CPPAbstractCompositeSet{
 public:
-    SimpleIntervalSetPtr_t simple_sets;
 
     CPPInterval() {
-        this->simple_sets = make_shared_simple_interval_set();
+        this->simple_sets = make_shared_simple_set_set();
     };
 
-    explicit CPPInterval(const SimpleIntervalSetPtr_t &simple_sets_){
+    explicit CPPInterval(const SimpleSetSetPtr_t &simple_sets_){
         this->simple_sets = simple_sets_;
     }
-    explicit CPPInterval(SimpleIntervalSetPtr_t &simple_sets_){
+    explicit CPPInterval(SimpleSetSetPtr_t &simple_sets_){
         this->simple_sets = simple_sets_;
     }
     explicit CPPInterval(const CPPSimpleInterval &simple_interval){
         simple_sets->insert(std::make_shared<CPPSimpleInterval>(simple_interval));
+    }
+
+    ~CPPInterval() override {
+        simple_sets->clear();
     }
 
     bool operator==(const CPPInterval &other) const;
@@ -118,7 +95,8 @@ public:
         return std::make_shared<CPPInterval>(std::forward<Args>(args)...);
     }
 
-    CPPIntervalPtr_t simplify();
+    CPPAbstractCompositeSetPtr_t simplify() override;
+    CPPAbstractCompositeSetPtr_t make_new_empty() const override;
+    bool is_singleton() const;
+    bool contains(float element) const;
 };
-
-#endif

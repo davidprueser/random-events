@@ -23,10 +23,18 @@ inline BorderType invert_border(const BorderType border) {
 
 
 
-
+bool CPPSimpleInterval::operator==(const CPPAbstractSimpleSet &other) override{
+    auto derived_other = (CPPSimpleInterval *) &other;
+        return *this == *derived_other;
+}
 
 bool CPPSimpleInterval::operator==(const CPPSimpleInterval &other) const{
     return lower == other.lower and upper == other.upper and left == other.left and right == other.right;
+}
+
+bool CPPSimpleInterval::operator<(const CPPAbstractSimpleSet &other) override{
+    const auto derived_other = (CPPSimpleInterval *) &other;
+    return *this < *derived_other;
 }
 
 bool CPPSimpleInterval::operator<(const CPPSimpleInterval &other) const{
@@ -34,6 +42,11 @@ bool CPPSimpleInterval::operator<(const CPPSimpleInterval &other) const{
         return upper < other.upper;
     }
     return lower < other.lower;
+}
+
+bool CPPSimpleInterval::operator<=(const CPPAbstractSimpleSet &other) override{
+    const auto derived_other = (CPPSimpleInterval *) &other;
+    return *this <= *derived_other;
 }
 
 bool CPPSimpleInterval::operator<=(const CPPSimpleInterval &other) const{
@@ -47,7 +60,7 @@ bool CPPSimpleInterval::operator!=(const CPPSimpleInterval &other) const{
     return !operator==(other);
 }
 
-bool CPPSimpleInterval::is_empty() {
+bool CPPSimpleInterval::is_empty() override{
     return lower > upper or (lower == upper and (left == BorderType::OPEN or right == BorderType::OPEN));
 }
 
@@ -55,7 +68,7 @@ bool CPPSimpleInterval::is_singleton() {
     return lower == upper and left == BorderType::CLOSED and right == BorderType::CLOSED;
 }
 
-CPPSimpleIntervalPtr_t CPPSimpleInterval::intersection_with(const CPPSimpleIntervalPtr_t &other){
+CPPAbstractSimpleSetPtr_t CPPSimpleInterval::intersection_with(const CPPAbstractSimpleSetPtr_t &other) override{
     const auto derived_other = (CPPSimpleInterval *) other.get();
 
     // get the new lower and upper bounds
@@ -90,7 +103,7 @@ CPPSimpleIntervalPtr_t CPPSimpleInterval::intersection_with(const CPPSimpleInter
     return make_shared(new_lower, new_upper, new_left, new_right);
 };
 
-SimpleIntervalSetPtr_t CPPSimpleInterval::complement(){
+SimpleSetSetPtr_t CPPSimpleInterval::complement() override{
     auto resulting_intervals = make_shared_simple_interval_set();
 
     // if the interval is the real line, return an empty set
@@ -125,10 +138,14 @@ SimpleIntervalSetPtr_t CPPSimpleInterval::complement(){
 };
 
 
-std::string CPPSimpleInterval::non_empty_to_string(){
+std::string *CPPSimpleInterval::non_empty_to_string() override{
     const char left_representation = left == BorderType::OPEN ? '(' : '[';
     const char right_representation = right == BorderType::OPEN ? ')' : ']';
     return std::string(1, left_representation) + std::to_string(lower) + ", " + std::to_string(upper) + std::string(1, right_representation);
+};
+
+bool CPPSimpleInterval::contains(const ElementaryVariant *element) override{
+    return false;
 };
 
 bool CPPSimpleInterval::contains(float element) const {
@@ -152,8 +169,6 @@ bool CPPSimpleInterval::contains(float element) const {
 };
 
 
-
-
 bool CPPInterval::operator==(const CPPInterval &other) const{
     if (simple_sets->size() != other.simple_sets->size()) {
             return false;
@@ -172,11 +187,7 @@ bool CPPInterval::operator==(const CPPInterval &other) const{
     return true;
  }
 
-bool CPPInterval::operator!=(const CPPInterval &other) const{
-    return !operator==(other);
-}
-
-CPPIntervalPtr_t CPPInterval::simplify(){
+CPPAbstractCompositeSetPtr_t CPPInterval::simplify() override{
     auto result = make_shared_simple_interval_set();
     bool first_iteration = true;
 
@@ -203,4 +214,22 @@ CPPIntervalPtr_t CPPInterval::simplify(){
     }
 
     return CPPInterval::make_shared(result);
+};
+
+CPPAbstractCompositeSetPtr_t CPPInterval::make_new_empty const override{
+    return CPPInterval::make_shared();
+};
+
+bool CPPInterval::is_singleton() const{
+    return simple_sets->size() == 1 and std::dynamic_pointer_cast<CPPSimpleInterval>(*simple_sets->begin())->is_singleton();
+};
+
+bool CPPInterval::contains() const{
+    for (const auto &simple_set: *simple_sets) {
+        auto simple_interval = std::static_pointer_cast<CPPSimpleInterval>(simple_set);
+        if (simple_interval->contains(element)) {
+            return true;
+        }
+    }
+    return false;
 };

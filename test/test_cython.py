@@ -28,9 +28,8 @@ class CythonTestCase(unittest.TestCase):
         t1 = time.time()
         com = None
         inter = Interval(SimpleInterval(0, 0, Bound.CLOSED, Bound.CLOSED))
-        for i in range(500000):
-            si = SimpleInterval(0, 1, Bound.OPEN, Bound.CLOSED)
-            com = si.complement_cpp()
+        si = SimpleInterval(0, 1, Bound.OPEN, Bound.CLOSED)
+        com = si.complement_cpp()
         self.assertTrue(inter.is_singleton())
 
         print(com)
@@ -46,15 +45,14 @@ class CythonTestCase(unittest.TestCase):
         t1 = time.time()
         com = None
         inter = Interval(SimpleInterval(0, 0, Bound.CLOSED, Bound.CLOSED))
-        for i in range(500000):
-            si = SimpleInterval(0, 1, Bound.OPEN, Bound.CLOSED)
-            com = si.complement()
+        si = SimpleInterval(0, 1, Bound.OPEN, Bound.CLOSED)
+        com = si.complement()
         self.assertTrue(inter.is_singleton())
 
         print(com)
         # print(complement)
-        totcy = time.time() - t1
-        print(f"cython {totcy}")
+        totpy = time.time() - t1
+        print(f"python {totpy}")
         print("---------------------------------")
 
 

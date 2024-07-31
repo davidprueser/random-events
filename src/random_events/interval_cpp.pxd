@@ -3,6 +3,8 @@ from libcpp.string cimport string
 from libcpp.set cimport set
 from libcpp cimport bool
 from libcpp.memory cimport shared_ptr
+from sigma_algebra_cpp cimport (CPPAbstractSimpleSet, CPPAbstractCompositeSet, CPPAbstractSimpleSetPtr_t,
+CPPAbstractCompositeSetPtr_t, SimpleSetSet_t, SimpleSetSetPtr_t, ElementaryVariant)
 
 
 cdef extern from "interval_cpp.h":
@@ -12,10 +14,8 @@ cdef extern from "interval_cpp.h":
 
     ctypedef shared_ptr[CPPSimpleInterval] CPPSimpleIntervalPtr_t
     ctypedef shared_ptr[CPPInterval] CPPIntervalPtr_t
-    ctypedef set[CPPSimpleIntervalPtr_t] SimpleIntervalSet_t
-    ctypedef shared_ptr[SimpleIntervalSet_t] SimpleIntervalSetPtr_t
 
-    cdef cppclass CPPSimpleInterval:
+    cdef cppclass CPPSimpleInterval(CPPAbstractSimpleSet):
         float lower
         float upper
         BorderType left
@@ -23,29 +23,32 @@ cdef extern from "interval_cpp.h":
 
         CPPSimpleInterval()
         CPPSimpleInterval(float lower, float upper, BorderType left, BorderType right)
+        bool operator==(const CPPAbstractSimpleSet &other)
         bool operator==(const CPPSimpleInterval &other) const
+        bool operator<(const CPPAbstractSimpleSet &other)
         bool operator<(const CPPSimpleInterval &other) const
+        bool operator<=(const CPPAbstractSimpleSet &other)
         bool operator<=(const CPPSimpleInterval &other) const
-        bool operator!=(const CPPSimpleInterval &other) const
 
 
         bool is_empty()
         bool is_singleton()
-        CPPSimpleIntervalPtr_t intersection_with(const CPPSimpleIntervalPtr_t &other)
-        SimpleIntervalSetPtr_t complement()
-        string non_empty_to_string()
-        bool contains(float x)
+        inline CPPAbstractSimpleSetPtr_t intersection_with(const CPPAbstractSimpleSetPtr_t &other)
+        SimpleSetSetPtr_t complement()
+        string *non_empty_to_string()
+        bool contains(const ElementaryVariant *element) const
+        bool contains(float x) const
 
 
-    cdef cppclass CPPInterval:
-        SimpleIntervalSetPtr_t simple_sets;
-
+    cdef cppclass CPPInterval(CPPAbstractCompositeSet):
         CPPInterval()
-        CPPInterval(const SimpleIntervalSetPtr_t &simple_sets_)
-        CPPInterval(SimpleIntervalSetPtr_t &simple_sets_)
+        CPPInterval(const SimpleSetSetPtr_t &simple_sets_)
+        CPPInterval(SimpleSetSetPtr_t &simple_sets_)
         CPPInterval(CPPSimpleInterval &simple_interval)
 
         bool operator==(const CPPInterval &other) const
         bool operator!=(const CPPInterval &other) const
 
         CPPIntervalPtr_t simplify()
+        bool is_singleton() const
+        bool contains(float element) const

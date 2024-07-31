@@ -1,46 +1,50 @@
 from random_events.sigma_algebra cimport AbstractSimpleSet, AbstractCompositeSet
-from random_events.interval_cpp cimport (CPPSimpleInterval, CPPInterval, SimpleIntervalSet_t, SimpleIntervalSetPtr_t,
-BorderType, CPPSimpleIntervalPtr_t, CPPIntervalPtr_t,)
+from random_events.interval_cpp cimport (CPPSimpleInterval, CPPInterval, BorderType, CPPSimpleIntervalPtr_t, CPPIntervalPtr_t,)
+from random_events.sigma_algebra_cpp cimport (CPPAbstractSimpleSet, CPPAbstractCompositeSet, CPPAbstractSimpleSetPtr_t,
+CPPAbstractCompositeSetPtr_t, SimpleSetSet_t, SimpleSetSetPtr_t)
 from libcpp.set cimport set as cppset
 from libc.stdio cimport printf
 from libcpp.string cimport string
 from libcpp.memory cimport make_shared, shared_ptr
 
 cdef class SimpleInterval(AbstractSimpleSet):
-    cdef CPPSimpleInterval si_
+    cdef CPPSimpleInterval *cpp_simple_interval_object
 
-    cdef CPPSimpleIntervalPtr_t as_cpp_simple_interval(self)
+    cdef const CPPAbstractSimpleSetPtr_t as_cpp_simple_set(self)
 
-    cpdef AbstractCompositeSet as_composite_set(self)
+    cdef const SimpleSetSetPtr_t as_cpp_simple_set_set(self)
 
-    # cpdef bint is_empty(self) except *
+    cpdef bint is_empty(self) except *
 
     cpdef bint is_singleton(self)
 
-    cdef SimpleInterval _from_cpp_si(self, CPPSimpleIntervalPtr_t si)
+    @staticmethod
+    cdef AbstractSimpleSet from_cpp_si(CPPAbstractSimpleSetPtr_t simple_set)
 
-    cdef _from_cpp_si_set(self, SimpleIntervalSetPtr_t si)
+    cdef from_cpp_simple_set_set(self, SimpleSetSetPtr_t simple_set_set)
 
-    cpdef SimpleInterval intersection_with_cpp(self, SimpleInterval other)
+    cpdef AbstractSimpleSet intersection_with(self, AbstractSimpleSet other)
 
-    cpdef complement_cpp(self)
+    cpdef complement(self)
 
-    # cpdef bint contains(self, float item) except *
+    cpdef bint contains(self, float item) except *
 
     cdef str non_empty_to_string(self)
 
     cpdef float center(self) except *
 
 cdef class Interval(AbstractCompositeSet):
-    cdef CPPInterval *i_
-    cdef simple_sets_py
+    cdef CPPInterval *cpp_interval_object
+
+    cdef const CPPAbstractCompositeSetPtr_t as_cpp_composite_set(self)
 
 
-    cdef SimpleInterval _from_cpp_si(self, CPPSimpleIntervalPtr_t si)
-    cdef _from_cpp_si_set(self, SimpleIntervalSetPtr_t si)
-    cdef Interval _from_cpp_interval(self, CPPIntervalPtr_t interval)
+    cdef AbstractCompositeSet from_cpp_composite_set(self, CPPAbstractCompositeSetPtr_t composite_set)
 
-    cpdef Interval simplify(self)
+    cdef from_cpp_composite_set_set(self, SimpleSetSetPtr_t si)
+
+
+    cpdef AbstractCompositeSet simplify(self)
 
     cpdef Interval new_empty_set(self)
 

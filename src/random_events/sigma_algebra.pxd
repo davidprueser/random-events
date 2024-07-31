@@ -1,7 +1,21 @@
 from random_events.interval_cpp cimport CPPSimpleInterval, CPPInterval
+from random_events.sigma_algebra_cpp cimport (CPPAbstractSimpleSet, CPPAbstractCompositeSet, CPPAbstractSimpleSetPtr_t,
+CPPAbstractCompositeSetPtr_t, SimpleSetSetPtr_t)
 from libcpp.set cimport set as cppset
+from libcpp.memory cimport make_shared
 
 cdef class AbstractSimpleSet:
+    cdef CPPAbstractSimpleSet *cpp_object
+
+    cdef const CPPAbstractSimpleSetPtr_t as_cpp_simple_set(self)
+
+    cdef const SimpleSetSetPtr_t as_cpp_simple_set_set(self)
+
+    @staticmethod
+    cdef AbstractSimpleSet from_cpp_si(CPPAbstractSimpleSetPtr_t simple_set)
+
+    cdef from_cpp_simple_set_set(self, SimpleSetSetPtr_t simple_set_set)
+
     cpdef AbstractSimpleSet intersection_with(self, AbstractSimpleSet other)
 
     cdef complement(self)
@@ -20,40 +34,47 @@ cdef class AbstractSimpleSet:
 
 
 cdef class AbstractCompositeSet:
-    # cdef CPPAbstractCompositeSet *acs_
+    cdef CPPAbstractCompositeSet *cpp_object
+
+    cdef const CPPAbstractCompositeSetPtr_t as_cpp_composite_set(self)
+
+    cdef AbstractCompositeSet from_cpp_composite_set(self, CPPAbstractCompositeSetPtr_t composite_set)
+
+    cdef from_cpp_composite_set_set(self, SimpleSetSetPtr_t composite_set_set)
+
+
 
     cpdef AbstractCompositeSet simplify(self)
 
     cpdef AbstractCompositeSet new_empty_set(self)
 
-    # cpdef AbstractCompositeSet union_with(self, AbstractCompositeSet other)
-    #
-    # cdef AbstractCompositeSet intersection_with_simple_set(self, AbstractSimpleSet other)
-    #
-    # cdef AbstractCompositeSet intersection_with_simple_sets(self, other)
-    #
-    # cpdef AbstractCompositeSet intersection_with(self, AbstractCompositeSet other)
-    #
-    # cdef AbstractCompositeSet difference_with_simple_set(self, AbstractSimpleSet other)
-    #
-    # cdef AbstractCompositeSet difference_with_simple_sets(self, other)
+    cpdef AbstractCompositeSet union_with(self, AbstractCompositeSet other)
 
-    # cpdef AbstractCompositeSet difference_with(self, AbstractCompositeSet other)
+    cpdef AbstractCompositeSet intersection_with_simple_set(self, AbstractSimpleSet other)
 
-    # cdef AbstractCompositeSet complement(self)
+    cpdef AbstractCompositeSet intersection_with_simple_sets(self, set_of_simple_sets)
+
+    cpdef AbstractCompositeSet intersection_with(self, AbstractCompositeSet other)
+
+    cpdef AbstractCompositeSet difference_with_simple_set(self, AbstractSimpleSet other)
+
+    cpdef AbstractCompositeSet difference_with_simple_sets(self, other)
+
+    cpdef AbstractCompositeSet difference_with(self, AbstractCompositeSet other)
+
+    cpdef AbstractCompositeSet complement(self)
 
     cpdef AbstractCompositeSet complement_if_empty(self)
 
-    # cpdef bint is_empty(self)
+    cpdef bint is_empty(self)
 
-    # cpdef bint contains(self, float item)
+    cpdef bint contains(self, float item)
 
-    # cpdef str to_string(self)
+    cpdef str to_string(self)
 
-    # cpdef bint is_disjoint(self)
+    cpdef bint is_disjoint(self)
 
-    # cdef split_into_disjoint_and_non_disjoint(self)
+    cdef split_into_disjoint_and_non_disjoint(self)
 
-    # cpdef AbstractCompositeSet make_disjoint(self)
+    cpdef AbstractCompositeSet make_disjoint(self)
 
-    # cdef void add_simple_set(self, AbstractSimpleSet simple_set)
