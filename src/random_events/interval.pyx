@@ -3,6 +3,8 @@
 from __future__ import annotations
 from sortedcontainers import SortedSet
 from typing_extensions import Dict, Any, Self
+
+from random_events.sigma_algebra_cpp import CPPAbstractSimpleSet
 from random_events.utils import SubclassJSONSerializer
 
 cdef class Bound:
@@ -43,14 +45,13 @@ cdef class Bound:
         return None
 
 
-cdef class SimpleInterval(AbstractSimpleSet):
+cdef class SimpleInterval:
     """
     Represents a simple interval.
     """
 
     def __init__(self, float lower = 0, float upper = 0, int left = Bound.OPEN, int right = Bound.OPEN):
-        self.cpp_simple_interval_object = new CPPSimpleInterval(lower, upper, <BorderType> left, <BorderType> right)
-        self.cpp_object = <CPPAbstractSimpleSet*> self.cpp_simple_interval_object
+        self.cpp_object = new CPPSimpleInterval(lower, upper, <BorderType> left, <BorderType> right)
 
     cdef const CPPAbstractSimpleSetPtr_t as_cpp_simple_set(self):
         return make_shared[CPPAbstractSimpleSet](self.cpp_object)
@@ -61,17 +62,17 @@ cdef class SimpleInterval(AbstractSimpleSet):
     #     return make_shared[SimpleSetSet_t](simple_set_set)
 
     def __hash__(self):
-        return hash((self.cpp_simple_interval_object.lower, self.cpp_simple_interval_object.upper, self.cpp_simple_interval_object.left,
-                     self.cpp_simple_interval_object.right))
+        return hash((self.cpp_object.lower, self.cpp_object.upper, self.cpp_object.left,
+                     self.cpp_object.right))
 
     def __lt__(self, SimpleInterval other):
         return self.cpp_object < other.cpp_object
 
     def __repr__(self):
-        return AbstractSimpleSet.to_string(self)
+        return self.cpp_object.to_string()
 
     def __str__(self):
-        return AbstractSimpleSet.to_string(self)
+        return self.cpp_object.to_string()
 
     cpdef Interval as_composite_set(self):
         return Interval(self)
@@ -83,73 +84,74 @@ cdef class SimpleInterval(AbstractSimpleSet):
         """
         :return: True if the interval is a singleton (contains only one value), False otherwise.
         """
-        return self.cpp_simple_interval_object.is_singleton()
+        return self.cpp_object.is_singleton()
 
     @staticmethod
-    cdef AbstractSimpleSet from_cpp_si(CPPAbstractSimpleSetPtr_t simple_set):
-        cdef AbstractSimpleSet simple_set_new = SimpleInterval.__new__(SimpleInterval)
-        simple_set_new.cpp_object = simple_set.get()
-        return simple_set_new
+    cdef SimpleInterval from_cpp_si(CPPAbstractSimpleSetPtr_t simple_set):
+        cdef SimpleInterval simple_interval_new = SimpleInterval.__new__(SimpleInterval)
+        simple_interval_new.cpp_object = <CPPSimpleInterval*> simple_set.get()
+        return simple_interval_new
 
-    cdef from_cpp_simple_set_set(self, SimpleSetSetPtr_t simple_set_set):
+    @staticmethod
+    cdef from_cpp_simple_set_set(SimpleSetSetPtr_t simple_set_set):
         cdef set[SimpleInterval] py_simple_sets = set[SimpleInterval]()
         for simple_set in simple_set_set.get()[0]:
-            sio = AbstractSimpleSet.from_cpp_si(simple_set)
-            sio.cpp_object = simple_set.get()
+            sio = SimpleInterval.from_cpp_si(simple_set)
+            sio.cpp_object = <CPPSimpleInterval*> simple_set.get()
             py_simple_sets.add(sio)
         py_sorted_simple_sets = SortedSet(py_simple_sets)
         return py_sorted_simple_sets
 
-    cpdef AbstractSimpleSet intersection_with(self, AbstractSimpleSet other):
-        return AbstractSimpleSet.from_cpp_si(self.cpp_object.intersection_with(make_shared[CPPAbstractSimpleSet](other.cpp_object)))
+    cpdef SimpleInterval intersection_with(self, SimpleInterval other):
+        cast = <CPPAbstractSimpleSet*> self.cpp_object
+        return SimpleInterval.from_cpp_si(cast.intersection_with(other.as_cpp_simple_set()))
 
     cpdef complement(self):
-        return self.from_cpp_simple_set_set(self.cpp_object.complement())
+        return SimpleInterval.from_cpp_simple_set_set(self.cpp_object.complement())
 
 
     cpdef bint contains(self, float item) except *:
-        return self.cpp_simple_interval_object.contains(item)
+        return self.cpp_object.contains(item)
 
     cdef str non_empty_to_string(self):
-        return self.cpp_simple_interval_object.non_empty_to_string()[0].decode('utf-8', 'replace')
+        return self.cpp_object.non_empty_to_string()[0].decode('utf-8', 'replace')
 
     cpdef float center(self):
         """
         :return: The center point of the interval
         """
-        return ((self.cpp_simple_interval_object.lower + self.cpp_simple_interval_object.upper) / 2) + self.cpp_simple_interval_object.lower
+        return ((self.cpp_object.lower + self.cpp_object.upper) / 2) + self.cpp_object.lower
 
 class SimpleIntervalPy(SubclassJSONSerializer, SimpleInterval):
 
     def to_json(self) -> Dict[str, Any]:
-        return {**super().to_json(), 'lower': self.cpp_simple_interval_object.lower, 'upper': self.cpp_simple_interval_object.upper, 'left': Bound.get_name(self.cpp_simple_interval_object.left),
-                'right': Bound.get_name(self.cpp_simple_interval_object.right)}
+        return {**super().to_json(), 'lower': self.cpp_object.lower, 'upper': self.cpp_object.upper, 'left': Bound.get_name(self.cpp_object.left),
+                'right': Bound.get_name(self.cpp_object.right)}
     @classmethod
     def _from_json(cls, data: Dict[str, Any]) -> Self:
         return cls(data['lower'], data['upper'], Bound[data['left']], Bound[data['right']])
 
 
-cdef class Interval(AbstractCompositeSet):
+cdef class Interval:
 
     def __cinit__(self):
-        self.cpp_interval_object = new CPPInterval()
+        self.cpp_object = new CPPInterval()
 
     def __init__(self, *simple_sets_py):
         cdef AbstractSimpleSet simple_set
         for simple_set in simple_sets_py:
-            self.cpp_interval_object.simple_sets.get().insert(simple_set.as_cpp_simple_set())
-        self.cpp_object = <CPPAbstractCompositeSet*> self.cpp_interval_object
+            self.cpp_object.simple_sets.get().insert(simple_set.as_cpp_simple_set())
 
     def __dealloc__(self):
-        del self.cpp_interval_object
+        del self.cpp_object
 
     def __eq__(self, Interval other):
         return self.cpp_object == other.cpp_object
 
-    cdef const CPPAbstractCompositeSetPtr_t as_cpp_composite_set(self):
-        return make_shared[CPPAbstractCompositeSet](self.cpp_object)
+    # cdef const CPPAbstractCompositeSetPtr_t as_cpp_composite_set(self):
+    #     return make_shared[CPPAbstractCompositeSet](self.cpp_object)
 
-    cdef AbstractCompositeSet from_cpp_composite_set(self, CPPAbstractCompositeSetPtr_t composite_set):
+    cdef Interval from_cpp_interval(self, CPPIntervalPtr_t composite_set):
         cdef Interval interval = Interval.__new__(Interval)
         interval.cpp_object = composite_set.get()
         return interval
@@ -157,14 +159,14 @@ cdef class Interval(AbstractCompositeSet):
     cdef from_cpp_composite_set_set(self, SimpleSetSetPtr_t si):
         cdef set[SimpleInterval] py_simple_sets = set[SimpleInterval]()
         for simple_set in si.get()[0]:
-            sio = AbstractSimpleSet.__new__(AbstractSimpleSet)
-            sio.cpp_object = AbstractSimpleSet.from_cpp_si(simple_set)
+            cdef CPPAbstractSimpleSet* sio = new CPPAbstractSimpleSet
+            sio.cpp_object = SimpleInterval.from_cpp_si(simple_set)
             py_simple_sets.add(sio)
         py_sorted_simple_sets = SortedSet(py_simple_sets)
         return py_sorted_simple_sets
 
-    cpdef AbstractCompositeSet simplify(self):
-        return self.from_cpp_composite_set(self.cpp_object.simplify())
+    cpdef Interval simplify(self):
+        return self.cpp_object.simplify()
 
     cpdef Interval new_empty_set(self):
         return Interval()
@@ -182,7 +184,8 @@ cdef class Interval(AbstractCompositeSet):
         #     return first_elem.is_singleton()
         #
         # return False
-        return self.cpp_interval_object.is_singleton()
+        return self.cpp_object.is_singleton()
+
 
 cpdef Interval open(float left, float right):
     """

@@ -34,7 +34,7 @@ cdef extern from "interval_cpp.h":
         bool is_empty()
         bool is_singleton()
         inline CPPAbstractSimpleSetPtr_t intersection_with(const CPPAbstractSimpleSetPtr_t &other)
-        SimpleSetSetPtr_t complement()
+        SimpleSetSetPtr_t complement() const
         string *non_empty_to_string()
         bool contains(const ElementaryVariant *element) const
         bool contains(float x) const

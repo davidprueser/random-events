@@ -5,7 +5,7 @@ from libcpp.set cimport set as cppset
 from libcpp.memory cimport make_shared
 
 cdef class AbstractSimpleSet:
-    cdef CPPAbstractSimpleSet *cpp_object
+    cdef CPPAbstractSimpleSet*  cpp_object
 
     cdef const CPPAbstractSimpleSetPtr_t as_cpp_simple_set(self)
 
@@ -34,7 +34,7 @@ cdef class AbstractSimpleSet:
 
 
 cdef class AbstractCompositeSet:
-    cdef CPPAbstractCompositeSet *cpp_object
+    cdef CPPAbstractCompositeSet*  cpp_object
 
     cdef const CPPAbstractCompositeSetPtr_t as_cpp_composite_set(self)
 
