@@ -1,7 +1,7 @@
 import unittest
 
-from random_events.interval_old import *
-from random_events.sigma_algebra_old import AbstractSimpleSet
+from random_events.interval import *
+from random_events.sigma_algebra import AbstractSimpleSet
 
 
 class SimpleIntervalTestCase(unittest.TestCase):
@@ -11,7 +11,7 @@ class SimpleIntervalTestCase(unittest.TestCase):
         b = SimpleInterval(0.5, 2)
         c = SimpleInterval(0.5, 0.75, Bound.OPEN, Bound.CLOSED)
 
-        intersection_a_b = a.intersection_with(b)
+        intersection_a_b = a.intersection_with_cpp(b)
         intersection_a_b_ = SimpleInterval(0.5, 1, Bound.OPEN, Bound.OPEN)
         self.assertEqual(intersection_a_b, intersection_a_b_)
 
@@ -28,10 +28,10 @@ class SimpleIntervalTestCase(unittest.TestCase):
 
     def test_complement(self):
         a = SimpleInterval()
-        complement_a = a.complement()
+        complement_a = a.complement_cpp()
         self.assertEqual(complement_a, SortedSet([SimpleInterval(-float('inf'), float('inf'), Bound.OPEN, Bound.OPEN)]))
         b = SimpleInterval(0, 1)
-        complement_b = b.complement()
+        complement_b = b.complement_cpp()
         self.assertEqual(complement_b, SortedSet([SimpleInterval(-float('inf'), 0, Bound.OPEN, Bound.CLOSED),
                                                   SimpleInterval(1, float('inf'), Bound.CLOSED, Bound.OPEN)]))
 
@@ -45,7 +45,7 @@ class SimpleIntervalTestCase(unittest.TestCase):
 
     def test_to_json(self):
         a = SimpleInterval(0, 1)
-        b = AbstractSimpleSet.from_json(a.to_json())
+        b = SimpleIntervalPy.from_json(a.to_json())
         self.assertIsInstance(b, SimpleInterval)
         self.assertEqual(a, b)
 
@@ -60,6 +60,8 @@ class IntervalTestCase(unittest.TestCase):
         a_b = Interval(d, a, b, c)
         a_b_simplified = a_b.simplify()
         a_b_simplified_ = Interval(SimpleInterval(0, 2), SimpleInterval(3, 4))
+        print(a_b_simplified)
+        print(a_b_simplified_)
         self.assertEqual(a_b_simplified, a_b_simplified_)
 
     def test_union(self):
@@ -78,13 +80,13 @@ class IntervalTestCase(unittest.TestCase):
     def test_to_json(self):
         a = SimpleInterval(0, 1)
         b = Interval(a)
-        c = AbstractSimpleSet.from_json(b.to_json())
+        c = SimpleIntervalPy.from_json(b.to_json())
         self.assertIsInstance(c, Interval)
         self.assertEqual(b, c)
 
     def test_alessandros_order_complaint(self):
-        a = open(2, 4) | open(5, 6)
-        b = open(3, 4) | open(4.5, 5.5)
+        a = open(2, 4) or open(5, 6)
+        b = open(3, 4) or open(4.5, 5.5)
         self.assertTrue(a < b)
         self.assertFalse(b < a)
 

@@ -53,7 +53,7 @@ cdef class SimpleInterval(AbstractSimpleSet):
         self.cpp_object = <CPPAbstractSimpleSet*> self.cpp_simple_interval_object
 
     cdef const CPPAbstractSimpleSetPtr_t as_cpp_simple_set(self):
-        return make_shared[CPPAbstractSimpleSet](self.cpp_object)
+        return shared_ptr[CPPAbstractSimpleSet](self.cpp_object)
 
     # cdef const SimpleSetSetPtr_t as_cpp_simple_set_set(self):
     #     cdef SimpleSetSet_t simple_set_set = cppset[CPPAbstractSimpleSetPtr_t]()
@@ -101,7 +101,7 @@ cdef class SimpleInterval(AbstractSimpleSet):
         return py_sorted_simple_sets
 
     cpdef AbstractSimpleSet intersection_with(self, AbstractSimpleSet other):
-        return AbstractSimpleSet.from_cpp_si(self.cpp_object.intersection_with(make_shared[CPPAbstractSimpleSet](other.cpp_object)))
+        return AbstractSimpleSet.from_cpp_si(self.cpp_object.intersection_with(shared_ptr[CPPAbstractSimpleSet](other.cpp_object)))
 
     cpdef complement(self):
         return self.from_cpp_simple_set_set(self.cpp_object.complement())
@@ -147,7 +147,7 @@ cdef class Interval(AbstractCompositeSet):
         return self.cpp_object == other.cpp_object
 
     cdef const CPPAbstractCompositeSetPtr_t as_cpp_composite_set(self):
-        return make_shared[CPPAbstractCompositeSet](self.cpp_object)
+        return shared_ptr[CPPAbstractCompositeSet](self.cpp_object)
 
     cdef AbstractCompositeSet from_cpp_composite_set(self, CPPAbstractCompositeSetPtr_t composite_set):
         cdef Interval interval = Interval.__new__(Interval)
