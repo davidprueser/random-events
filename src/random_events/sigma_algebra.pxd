@@ -1,8 +1,12 @@
 from random_events.interval_cpp cimport CPPSimpleInterval, CPPInterval
 from random_events.sigma_algebra_cpp cimport (CPPAbstractSimpleSet, CPPAbstractCompositeSet, CPPAbstractSimpleSetPtr_t,
-CPPAbstractCompositeSetPtr_t, SimpleSetSetPtr_t)
+CPPAbstractCompositeSetPtr_t, SimpleSetSetPtr_t, SimpleSetSet_t)
 from libcpp.set cimport set as cppset
-from libcpp.memory cimport make_shared
+from libcpp.memory cimport shared_ptr
+from libc.stdio cimport printf
+from libcpp.utility cimport pair
+
+ctypedef pair[CPPAbstractCompositeSetPtr_t, CPPAbstractCompositeSetPtr_t] acspair
 
 cdef class AbstractSimpleSet:
     cdef CPPAbstractSimpleSet *cpp_object
@@ -74,7 +78,7 @@ cdef class AbstractCompositeSet:
 
     cpdef bint is_disjoint(self)
 
-    cdef split_into_disjoint_and_non_disjoint(self)
+    cdef tuple[AbstractCompositeSet, AbstractCompositeSet] split_into_disjoint_and_non_disjoint(self)
 
     cpdef AbstractCompositeSet make_disjoint(self)
 

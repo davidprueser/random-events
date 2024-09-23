@@ -53,7 +53,7 @@ public:
     BorderType left;
     BorderType right;
 
-    CPPSimpleInterval(float lower = 0, float upper = 0, BorderType left = BorderType::OPEN, BorderType right = BorderType::OPEN) {
+    explicit CPPSimpleInterval(float lower = 0, float upper = 0, BorderType left = BorderType::OPEN, BorderType right = BorderType::OPEN) {
 }
 
     bool operator==(const CPPAbstractSimpleSet &other) override{

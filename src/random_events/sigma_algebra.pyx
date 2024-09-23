@@ -16,8 +16,8 @@ cdef class AbstractSimpleSet:
     Simple sets are sets that can be represented as a single object.
     """
 
-    def __init__(self):
-        self.cpp_object = new CPPAbstractSimpleSet()
+    # def __init__(self):
+    #     self.cpp_object = new CPPAbstractSimpleSet()
 
     # def __dealloc__(self):
     #     del self.cpp_object
@@ -105,6 +105,7 @@ cdef class AbstractSimpleSet:
         """
         :return: A string representation of this set.
         """
+
         return self.cpp_object.to_string().decode('utf-8', 'replace')
 
     def __str__(self):
@@ -130,8 +131,8 @@ cdef class AbstractCompositeSet:
     AbstractCompositeSet is a set that is composed of a disjoint union of simple sets.
     """
 
-    def __cinit__(self):
-        self.cpp_object = new CPPAbstractCompositeSet()
+    # def __cinit__(self):
+    #     self.cpp_object = new CPPAbstractCompositeSet()
 
     def __init__(self, *simple_sets_py):
         cdef AbstractSimpleSet simple_set
@@ -203,7 +204,7 @@ cdef class AbstractCompositeSet:
         :return: The intersection of this set with the simple set
         """
         return self.from_cpp_composite_set(self.cpp_object.intersection_with(other.as_cpp_simple_set()))
-    #
+
     cpdef AbstractCompositeSet intersection_with_simple_sets(self, set_of_simple_sets):
         """
         Form the intersection of this object with a set of simple sets.
@@ -211,10 +212,11 @@ cdef class AbstractCompositeSet:
         :param set_of_simple_sets: The set of simple sets
         :return: The intersection of this set with the set of simple sets
         """
-        cdef SimpleSetSetPtr_t cpp_set_of_simple_sets = <SimpleSetSetPtr_t> [simple_set.as_cpp_simple_set()
-                                                                             for simple_set in set_of_simple_sets]
 
-        return self.from_cpp_composite_set(self.cpp_object.intersection_with(cpp_set_of_simple_sets))
+        # y = <SimpleSetSetPtr_t> [simple_set.as_cpp_simple_set() for simple_set in set_of_simple_sets]
+        #
+        # return self.from_cpp_composite_set(self.cpp_object.intersection_with(y))
+        return [self.intersection_with_simple_set(simple_set) for simple_set in set_of_simple_sets]
 
     cpdef AbstractCompositeSet intersection_with(self, AbstractCompositeSet other):
         """
@@ -237,11 +239,12 @@ cdef class AbstractCompositeSet:
         return self.from_cpp_composite_set(self.cpp_object.difference_with(other.as_cpp_simple_set()))
     #
     cpdef AbstractCompositeSet difference_with_simple_sets(self, other):
-        cdef SimpleSetSetPtr_t cpp_set_of_simple_sets = <SimpleSetSetPtr_t> [simple_set.as_cpp_simple_set()
-                                                                             for simple_set in other]
-        cdef AbstractCompositeSet result = self.new_empty_set()
-        result.cpp_object.simple_sets = cpp_set_of_simple_sets
-        return self.from_cpp_composite_set(self.cpp_object.difference_with(result.as_cpp_composite_set()))
+        # cdef SimpleSetSetPtr_t cpp_set_of_simple_sets = <SimpleSetSetPtr_t> [simple_set.as_cpp_simple_set()
+        #                                                                      for simple_set in other]
+        # cdef AbstractCompositeSet result = self.new_empty_set()
+        # result.cpp_object.simple_sets = cpp_set_of_simple_sets
+        # return self.from_cpp_composite_set(self.cpp_object.difference_with(result.as_cpp_composite_set()))
+        return [self.difference_with_simple_set(simple_set) for simple_set in other]
 
     cpdef AbstractCompositeSet difference_with(self, AbstractCompositeSet other):
         """
@@ -308,7 +311,7 @@ cdef class AbstractCompositeSet:
         """
         return self.cpp_object.is_disjoint()
 
-    cdef split_into_disjoint_and_non_disjoint(self):
+    cdef tuple[AbstractCompositeSet, AbstractCompositeSet] split_into_disjoint_and_non_disjoint(self):
         """
         Split this composite set into disjoint and non-disjoint parts.
 
@@ -324,8 +327,8 @@ cdef class AbstractCompositeSet:
 
         :return: A tuple of the disjoint and non-disjoint set.
         """
-        cdef tuple[CPPAbstractCompositeSetPtr_t, CPPAbstractCompositeSetPtr_t] result = self.cpp_object.split_into_disjoint_and_non_disjoint()
-        return self.from_cpp_composite_set(result[0]), self.from_cpp_composite_set(result[1])
+        cdef acspair result = self.cpp_object.split_into_disjoint_and_non_disjoint()
+        return self.from_cpp_composite_set(result.first), self.from_cpp_composite_set(result.second)
 
     cpdef AbstractCompositeSet make_disjoint(self):
         """

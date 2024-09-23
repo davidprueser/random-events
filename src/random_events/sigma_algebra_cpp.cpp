@@ -1,7 +1,7 @@
-#include "sigma_algebra.h"
+#include "sigma_algebra_cpp.h"
 
 
-SimpleSetSetPtr_t CPPSimpleSet::difference_with(const CPPAbstractSimpleSetPtr_t &other){
+SimpleSetSetPtr_t CPPAbstractSimpleSet::difference_with(const CPPAbstractSimpleSetPtr_t &other){
 
     // get the intersection of both atomic simple_sets
     auto intersection = intersection_with(other);
@@ -35,7 +35,7 @@ SimpleSetSetPtr_t CPPSimpleSet::difference_with(const CPPAbstractSimpleSetPtr_t 
 
 }
 
-std::string *CPPSimpleSet::to_string(){
+std::string *CPPAbstractSimpleSet::to_string(){
     if (is_empty()) {
         return &EMPTY_SET_SYMBOL;
     }
@@ -44,15 +44,15 @@ std::string *CPPSimpleSet::to_string(){
     return result;
 }
 
-bool CPPSimpleSet::operator!=(const CPPAbstractSimpleSet &other){
+bool CPPAbstractSimpleSet::operator!=(const CPPAbstractSimpleSet &other){
     return !operator==(other);
 }
 
-bool CPPSimpleSet::operator>(const CPPAbstractSimpleSet &other){
+bool CPPAbstractSimpleSet::operator>(const CPPAbstractSimpleSet &other){
     return !operator<=(other);
 }
 
-bool CPPSimpleSet::operator>=(const CPPAbstractSimpleSet &other){
+bool CPPAbstractSimpleSet::operator>=(const CPPAbstractSimpleSet &other){
     return !operator<(other);
 }
 
@@ -116,7 +116,7 @@ bool CPPAbstractCompositeSet::operator!=(const CPPAbstractCompositeSet &other) c
 
 
 
-std::tuple<CPPAbstractCompositeSetPtr_t, CPPAbstractCompositeSetPtr_t>
+std::pair<CPPAbstractCompositeSetPtr_t, CPPAbstractCompositeSetPtr_t>
 CPPAbstractCompositeSet::split_into_disjoint_and_non_disjoint(){
 
     // initialize result for disjoint and non-disjoint sets

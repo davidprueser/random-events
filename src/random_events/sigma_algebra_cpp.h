@@ -185,7 +185,7 @@ public:
     *
     * @return A tuple of disjoint and non-disjoint composite sets.
     */
-    std::tuple<CPPAbstractCompositeSetPtr_t, CPPAbstractCompositeSetPtr_t> split_into_disjoint_and_non_disjoint();
+    std::pair<CPPAbstractCompositeSetPtr_t, CPPAbstractCompositeSetPtr_t> split_into_disjoint_and_non_disjoint();
 
     /**
     * Create an equal composite set that contains a disjoint union of simple sets.

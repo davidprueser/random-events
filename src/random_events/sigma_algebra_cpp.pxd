@@ -2,6 +2,7 @@ from libcpp.memory cimport shared_ptr
 from libcpp cimport bool
 from libcpp.set cimport set
 from libcpp.string cimport string
+from libcpp.utility cimport pair
 
 cdef extern from "sigma_algebra_cpp.h":
 
@@ -46,7 +47,7 @@ cdef extern from "sigma_algebra_cpp.h":
         CPPAbstractCompositeSetPtr_t intersection_with(const SimpleSetSetPtr_t &other)
         CPPAbstractCompositeSetPtr_t intersection_with(const CPPAbstractCompositeSetPtr_t &other)
         CPPAbstractCompositeSetPtr_t make_disjoint()
-        tuple[CPPAbstractCompositeSetPtr_t, CPPAbstractCompositeSetPtr_t] split_into_disjoint_and_non_disjoint()
+        pair[CPPAbstractCompositeSetPtr_t, CPPAbstractCompositeSetPtr_t] split_into_disjoint_and_non_disjoint()
         CPPAbstractCompositeSetPtr_t difference_with(const CPPAbstractSimpleSetPtr_t &other)
         CPPAbstractCompositeSetPtr_t difference_with(const CPPAbstractCompositeSetPtr_t &other)
         bool contains(CPPAbstractCompositeSetPtr_t &other)

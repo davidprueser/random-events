@@ -1,7 +1,6 @@
 import unittest
-
-from random_events.interval import *
-from random_events.sigma_algebra import AbstractSimpleSet
+from sortedcontainers import SortedSet
+from random_events.interval import SimpleInterval, Bound, SimpleIntervalPy, Interval
 
 
 class SimpleIntervalTestCase(unittest.TestCase):

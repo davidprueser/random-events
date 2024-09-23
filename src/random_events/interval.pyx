@@ -58,14 +58,14 @@ cdef class SimpleInterval(AbstractSimpleSet):
     # cdef const SimpleSetSetPtr_t as_cpp_simple_set_set(self):
     #     cdef SimpleSetSet_t simple_set_set = cppset[CPPAbstractSimpleSetPtr_t]()
     #     simple_set_set.insert(self.as_cpp_simple_set())
-    #     return make_shared[SimpleSetSet_t](simple_set_set)
+    #     return shared_ptr[SimpleSetSet_t](simple_set_set)
 
     def __hash__(self):
         return hash((self.cpp_simple_interval_object.lower, self.cpp_simple_interval_object.upper, self.cpp_simple_interval_object.left,
                      self.cpp_simple_interval_object.right))
 
     def __lt__(self, SimpleInterval other):
-        return self.cpp_object < other.cpp_object
+        return self.cpp_simple_interval_object < other.cpp_simple_interval_object
 
     def __repr__(self):
         return AbstractSimpleSet.to_string(self)
@@ -144,7 +144,7 @@ cdef class Interval(AbstractCompositeSet):
         del self.cpp_interval_object
 
     def __eq__(self, Interval other):
-        return self.cpp_object == other.cpp_object
+        return self.cpp_interval_object == other.cpp_interval_object
 
     cdef const CPPAbstractCompositeSetPtr_t as_cpp_composite_set(self):
         return shared_ptr[CPPAbstractCompositeSet](self.cpp_object)
