@@ -1,12 +1,10 @@
-from random_events.interval_cpp cimport CPPSimpleInterval, CPPInterval
-from random_events.sigma_algebra_cpp cimport (CPPAbstractSimpleSet, CPPAbstractCompositeSet, CPPAbstractSimpleSetPtr_t,
-CPPAbstractCompositeSetPtr_t, SimpleSetSetPtr_t, SimpleSetSet_t)
+from random_events.interval_cpp cimport *
+from random_events.sigma_algebra_cpp cimport *
 from libcpp.set cimport set as cppset
 from libcpp.memory cimport shared_ptr
 from libc.stdio cimport printf
 from libcpp.utility cimport pair
 
-ctypedef pair[CPPAbstractCompositeSetPtr_t, CPPAbstractCompositeSetPtr_t] acspair
 
 cdef class AbstractSimpleSet:
     cdef CPPAbstractSimpleSet *cpp_object

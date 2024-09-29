@@ -1,5 +1,5 @@
 from random_events.sigma_algebra cimport AbstractSimpleSet, AbstractCompositeSet
-from random_events.interval_cpp cimport (CPPSimpleInterval, CPPInterval, BorderType, CPPSimpleIntervalPtr_t, CPPIntervalPtr_t,)
+from random_events.interval_cpp cimport *
 from random_events.sigma_algebra_cpp cimport (CPPAbstractSimpleSet, CPPAbstractCompositeSet, CPPAbstractSimpleSetPtr_t,
 CPPAbstractCompositeSetPtr_t, SimpleSetSet_t, SimpleSetSetPtr_t)
 from libcpp.set cimport set as cppset
@@ -33,6 +33,7 @@ cdef class SimpleInterval(AbstractSimpleSet):
 
     cpdef float center(self) except *
 
+
 cdef class Interval(AbstractCompositeSet):
     cdef CPPInterval *cpp_interval_object
 
@@ -42,7 +43,6 @@ cdef class Interval(AbstractCompositeSet):
     cdef AbstractCompositeSet from_cpp_composite_set(self, CPPAbstractCompositeSetPtr_t composite_set)
 
     cdef from_cpp_composite_set_set(self, SimpleSetSetPtr_t si)
-
 
     cpdef AbstractCompositeSet simplify(self)
 

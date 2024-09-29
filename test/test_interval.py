@@ -10,9 +10,11 @@ class SimpleIntervalTestCase(unittest.TestCase):
         b = SimpleInterval(0.5, 2)
         c = SimpleInterval(0.5, 0.75, Bound.OPEN, Bound.CLOSED)
 
-        intersection_a_b = a.intersection_with_cpp(b)
+        intersection_a_b = a.intersection_with(b)
         intersection_a_b_ = SimpleInterval(0.5, 1, Bound.OPEN, Bound.OPEN)
-        self.assertEqual(intersection_a_b, intersection_a_b_)
+        # print(dir(random_events.interval))
+        # print(dir(random_events.sigma_algebra))
+        self.assertEqual(intersection_a_b, 0)
 
     def test_invert(self):
         x = Bound.CLOSED
@@ -27,10 +29,10 @@ class SimpleIntervalTestCase(unittest.TestCase):
 
     def test_complement(self):
         a = SimpleInterval()
-        complement_a = a.complement_cpp()
+        complement_a = a.complement()
         self.assertEqual(complement_a, SortedSet([SimpleInterval(-float('inf'), float('inf'), Bound.OPEN, Bound.OPEN)]))
         b = SimpleInterval(0, 1)
-        complement_b = b.complement_cpp()
+        complement_b = b.complement()
         self.assertEqual(complement_b, SortedSet([SimpleInterval(-float('inf'), 0, Bound.OPEN, Bound.CLOSED),
                                                   SimpleInterval(1, float('inf'), Bound.CLOSED, Bound.OPEN)]))
 

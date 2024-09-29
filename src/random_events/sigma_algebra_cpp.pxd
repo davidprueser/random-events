@@ -1,3 +1,5 @@
+# distutils: sources = sigma_algebra_cpp.cpp
+
 from libcpp.memory cimport shared_ptr
 from libcpp cimport bool
 from libcpp.set cimport set

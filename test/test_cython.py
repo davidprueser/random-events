@@ -29,7 +29,7 @@ class CythonTestCase(unittest.TestCase):
         com = None
         inter = Interval(SimpleInterval(0, 0, Bound.CLOSED, Bound.CLOSED))
         si = SimpleInterval(0, 1, Bound.OPEN, Bound.CLOSED)
-        com = si.complement_cpp()
+        com = si.complement()
         self.assertTrue(inter.is_singleton())
 
         print(com)

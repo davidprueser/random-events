@@ -1,5 +1,5 @@
 # distutils: language = c++
-# distutils: sources = src/random_events/interval_cpp.cpp
+
 from __future__ import annotations
 from sortedcontainers import SortedSet
 from typing_extensions import Dict, Any, Self
@@ -119,11 +119,12 @@ cdef class SimpleInterval(AbstractSimpleSet):
         """
         return ((self.cpp_simple_interval_object.lower + self.cpp_simple_interval_object.upper) / 2) + self.cpp_simple_interval_object.lower
 
-class SimpleIntervalPy(SubclassJSONSerializer, SimpleInterval):
 
+class SimpleIntervalPy(SubclassJSONSerializer, SimpleInterval):
     def to_json(self) -> Dict[str, Any]:
         return {**super().to_json(), 'lower': self.cpp_simple_interval_object.lower, 'upper': self.cpp_simple_interval_object.upper, 'left': Bound.get_name(self.cpp_simple_interval_object.left),
                 'right': Bound.get_name(self.cpp_simple_interval_object.right)}
+
     @classmethod
     def _from_json(cls, data: Dict[str, Any]) -> Self:
         return cls(data['lower'], data['upper'], Bound[data['left']], Bound[data['right']])
@@ -138,21 +139,13 @@ cdef class Interval(AbstractCompositeSet):
         cdef AbstractSimpleSet simple_set
         for simple_set in simple_sets_py:
             self.cpp_interval_object.simple_sets.get().insert(simple_set.as_cpp_simple_set())
-        self.cpp_object = <CPPAbstractCompositeSet*> self.cpp_interval_object
+        # self.cpp_object = <AbstractCompositeSet.cpp_object*> self.cpp_interval_object
 
     def __dealloc__(self):
         del self.cpp_interval_object
 
     def __eq__(self, Interval other):
         return self.cpp_interval_object == other.cpp_interval_object
-
-    cdef const CPPAbstractCompositeSetPtr_t as_cpp_composite_set(self):
-        return shared_ptr[CPPAbstractCompositeSet](self.cpp_object)
-
-    cdef AbstractCompositeSet from_cpp_composite_set(self, CPPAbstractCompositeSetPtr_t composite_set):
-        cdef Interval interval = Interval.__new__(Interval)
-        interval.cpp_object = composite_set.get()
-        return interval
 
     cdef from_cpp_composite_set_set(self, SimpleSetSetPtr_t si):
         cdef set[SimpleInterval] py_simple_sets = set[SimpleInterval]()

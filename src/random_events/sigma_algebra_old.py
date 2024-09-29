@@ -262,9 +262,9 @@ class AbstractCompositeSet(SubclassJSONSerializer):
             return self.complement_if_empty()
 
         result = self.new_empty_set()
-        result.simple_sets = self.simple_sets[0].complement_cpp()
+        result.simple_sets = self.simple_sets[0].complement()
         for simple_set in self.simple_sets[1:]:
-            result = result.intersection_with_simple_sets(simple_set.complement_cpp())
+            result = result.intersection_with_simple_sets(simple_set.complement())
         return result.make_disjoint()
 
     @abstractmethod

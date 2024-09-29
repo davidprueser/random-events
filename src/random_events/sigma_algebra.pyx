@@ -1,10 +1,10 @@
-from __future__ import annotations
-import itertools
-from abc import abstractmethod
+# distutils: language = c++
 
-from sortedcontainers import SortedSet
+from __future__ import annotations
+from abc import abstractmethod
 from typing_extensions import Self, TYPE_CHECKING, Type, Dict, Any
 from random_events.utils import SubclassJSONSerializer
+
 
 EMPTY_SET_SYMBOL = "∅"
 
@@ -66,14 +66,12 @@ cdef class AbstractSimpleSet:
         """
         raise NotImplementedError
 
-    # @abstractmethod
     cpdef bint is_empty(self) except *:
         """
         :return: Rather this set is empty or not.
         """
         raise NotImplementedError
 
-    # @abstractmethod
     cpdef bint contains(self, float item) except *:
         """
         Check if this set contains an item.
@@ -82,7 +80,6 @@ cdef class AbstractSimpleSet:
         """
         raise NotImplementedError
 
-    # @abstractmethod
     def __hash__(self):
         raise NotImplementedError
 
@@ -105,17 +102,16 @@ cdef class AbstractSimpleSet:
         """
         :return: A string representation of this set.
         """
-
-        return self.cpp_object.to_string().decode('utf-8', 'replace')
+        if self.is_empty():
+            return EMPTY_SET_SYMBOL
+        return self.non_empty_to_string()
 
     def __str__(self):
         return self.to_string()
 
-    # @abstractmethod
     def __lt__(self, other):
         raise NotImplementedError
 
-    # @abstractmethod
     cpdef AbstractCompositeSet as_composite_set(self):
         """
         Convert this simple set to a composite set.
@@ -163,7 +159,6 @@ cdef class AbstractCompositeSet:
         """
         raise NotImplementedError
 
-    # @abstractmethod
     cpdef AbstractCompositeSet simplify(self):
         """
         Simplify this set into an equivalent, more compact version.
@@ -172,7 +167,6 @@ cdef class AbstractCompositeSet:
         """
         raise NotImplementedError
 
-    # @abstractmethod
     cpdef AbstractCompositeSet new_empty_set(self):
         """
         Create a new empty set.
@@ -212,10 +206,6 @@ cdef class AbstractCompositeSet:
         :param set_of_simple_sets: The set of simple sets
         :return: The intersection of this set with the set of simple sets
         """
-
-        # y = <SimpleSetSetPtr_t> [simple_set.as_cpp_simple_set() for simple_set in set_of_simple_sets]
-        #
-        # return self.from_cpp_composite_set(self.cpp_object.intersection_with(y))
         return [self.intersection_with_simple_set(simple_set) for simple_set in set_of_simple_sets]
 
     cpdef AbstractCompositeSet intersection_with(self, AbstractCompositeSet other):
@@ -224,7 +214,6 @@ cdef class AbstractCompositeSet:
         :param other: The other set
         :return: The intersection of this set with the other set
         """
-        # return self.intersection_with_simple_sets(other.simple_sets)
         return self.from_cpp_composite_set(self.cpp_object.intersection_with(other.cpp_object.simple_sets))
 
     def __and__(self, other):
@@ -237,13 +226,13 @@ cdef class AbstractCompositeSet:
         :return: The difference of this set with the other set
         """
         return self.from_cpp_composite_set(self.cpp_object.difference_with(other.as_cpp_simple_set()))
-    #
+
     cpdef AbstractCompositeSet difference_with_simple_sets(self, other):
-        # cdef SimpleSetSetPtr_t cpp_set_of_simple_sets = <SimpleSetSetPtr_t> [simple_set.as_cpp_simple_set()
-        #                                                                      for simple_set in other]
-        # cdef AbstractCompositeSet result = self.new_empty_set()
-        # result.cpp_object.simple_sets = cpp_set_of_simple_sets
-        # return self.from_cpp_composite_set(self.cpp_object.difference_with(result.as_cpp_composite_set()))
+        """
+        Form the difference with a set of composite sets.
+        :param other: The other sets
+        :return: The difference of this set with the other sets
+        """
         return [self.difference_with_simple_set(simple_set) for simple_set in other]
 
     cpdef AbstractCompositeSet difference_with(self, AbstractCompositeSet other):
@@ -263,7 +252,6 @@ cdef class AbstractCompositeSet:
         """
         return self.from_cpp_composite_set(self.cpp_object.complement())
 
-#     @abstractmethod
     cpdef AbstractCompositeSet complement_if_empty(self):
         """
         :return: The complement of this if it is empty.
@@ -277,7 +265,7 @@ cdef class AbstractCompositeSet:
         """
         Check if this set is empty.
         """
-        return self.cpp_object.simple_sets.get().size() == 0
+        return self.cpp_object.is_empty()
 
     cpdef bint contains(self, float item):
         """
@@ -297,7 +285,13 @@ cdef class AbstractCompositeSet:
         """
         :return: A string representation of this set.
         """
-        return self.cpp_object.to_string().decode('utf-8', 'replace')
+        if self.is_empty():
+            return EMPTY_SET_SYMBOL
+
+        cdef SimpleSetSet_t simple_sets = self.cpp_object.simple_sets.get()[0]
+        cdef CPPAbstractSimpleSetPtr_t simple_set_ptr
+
+        return " u ".join([AbstractSimpleSet.from_cpp_si(simple_set_ptr).to_string() for simple_set_ptr in simple_sets])
 
     def __str__(self):
         return self.to_string()
@@ -327,7 +321,7 @@ cdef class AbstractCompositeSet:
 
         :return: A tuple of the disjoint and non-disjoint set.
         """
-        cdef acspair result = self.cpp_object.split_into_disjoint_and_non_disjoint()
+        cdef pair[CPPAbstractCompositeSetPtr_t, CPPAbstractCompositeSetPtr_t] result = self.cpp_object.split_into_disjoint_and_non_disjoint()
         return self.from_cpp_composite_set(result.first), self.from_cpp_composite_set(result.second)
 
     cpdef AbstractCompositeSet make_disjoint(self):

@@ -168,7 +168,7 @@ CPPAbstractCompositeSet::split_into_disjoint_and_non_disjoint(){
         disjoint->simple_sets->insert(difference);
     }
 
-    auto result = std::make_tuple(disjoint, non_disjoint);
+    auto result = std::make_pair(disjoint, non_disjoint);
     return result;
 }
 

@@ -225,7 +225,7 @@ public:
     * @param other The other simple set.
     * @return The union as disjoint composite set.
     */
-    CPPAbstractCompositeSetPtr_t union_with(CPPAbstractSimpleSetPtr_t &other) const;
+    CPPAbstractCompositeSetPtr_t union_with(const CPPAbstractSimpleSetPtr_t &other) const;
 
     /**
     * Form the union with another composite set.

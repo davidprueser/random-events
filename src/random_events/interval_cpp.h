@@ -53,25 +53,25 @@ public:
     BorderType left;
     BorderType right;
 
-    explicit CPPSimpleInterval(float lower = 0, float upper = 0, BorderType left = BorderType::OPEN, BorderType right = BorderType::OPEN) {
+    CPPSimpleInterval(float lower = 0, float upper = 0, BorderType left = BorderType::OPEN, BorderType right = BorderType::OPEN) {
 }
 
     bool operator==(const CPPAbstractSimpleSet &other) override{
         auto derived_other = (CPPSimpleInterval *) &other;
             return *this == *derived_other;
     }
-    bool operator==(const CPPSimpleInterval &other) const;
+//    bool operator==(const CPPSimpleInterval &other) const;
     bool operator<(const CPPAbstractSimpleSet &other) override{
         const auto derived_other = (CPPSimpleInterval *) &other;
         return *this < *derived_other;
     }
-    bool operator<(const CPPSimpleInterval &other) const;
+//    bool operator<(const CPPSimpleInterval &other) const;
     bool operator<=(const CPPAbstractSimpleSet &other) override{
         const auto derived_other = (CPPSimpleInterval *) &other;
         return *this <= *derived_other;
     }
-    bool operator<=(const CPPSimpleInterval &other) const;
-    bool operator!=(const CPPSimpleInterval &other) const;
+//    bool operator<=(const CPPSimpleInterval &other) const;
+//    bool operator!=(const CPPSimpleInterval &other) const;
 
     template<typename... Args>
     static CPPSimpleIntervalPtr_t make_shared(Args &&... args) {
