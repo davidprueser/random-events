@@ -87,7 +87,7 @@ cdef class SimpleInterval(AbstractSimpleSet):
 
     @staticmethod
     cdef AbstractSimpleSet from_cpp_si(CPPAbstractSimpleSetPtr_t simple_set):
-        cdef AbstractSimpleSet simple_set_new = SimpleInterval.__new__(SimpleInterval)
+        cdef AbstractSimpleSet simple_set_new = SimpleInterval
         simple_set_new.cpp_object = simple_set.get()
         return simple_set_new
 
@@ -106,12 +106,13 @@ cdef class SimpleInterval(AbstractSimpleSet):
     cpdef complement(self):
         return self.from_cpp_simple_set_set(self.cpp_object.complement())
 
-
     cpdef bint contains(self, float item) except *:
         return self.cpp_simple_interval_object.contains(item)
 
-    cdef str non_empty_to_string(self):
-        return self.cpp_simple_interval_object.non_empty_to_string()[0].decode('utf-8', 'replace')
+    cpdef str non_empty_to_string(self):
+        left_bracket = '[' if self.cpp_simple_interval_object.left == Bound.CLOSED else '('
+        right_bracket = ']' if self.cpp_simple_interval_object.right == Bound.CLOSED else ')'
+        return f'{left_bracket}{self.cpp_simple_interval_object.lower}, {self.cpp_simple_interval_object.upper}{right_bracket}'
 
     cpdef float center(self):
         """

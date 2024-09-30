@@ -1,5 +1,5 @@
-from random_events.interval_cpp cimport *
-from random_events.sigma_algebra_cpp cimport *
+from random_events.sigma_algebra_cpp cimport (CPPAbstractSimpleSet, CPPAbstractCompositeSet, SimpleSetSetPtr_t,
+        CPPAbstractSimpleSetPtr_t, CPPAbstractCompositeSetPtr_t, SimpleSetSet_t)
 from libcpp.set cimport set as cppset
 from libcpp.memory cimport shared_ptr
 from libc.stdio cimport printf

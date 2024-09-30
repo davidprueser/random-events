@@ -1,6 +1,6 @@
 import unittest
 from sortedcontainers import SortedSet
-from random_events.interval import SimpleInterval, Bound, SimpleIntervalPy, Interval
+from random_events.interval import SimpleInterval, Bound, SimpleIntervalPy, Interval, open
 
 
 class SimpleIntervalTestCase(unittest.TestCase):
@@ -14,7 +14,7 @@ class SimpleIntervalTestCase(unittest.TestCase):
         intersection_a_b_ = SimpleInterval(0.5, 1, Bound.OPEN, Bound.OPEN)
         # print(dir(random_events.interval))
         # print(dir(random_events.sigma_algebra))
-        self.assertEqual(intersection_a_b, 0)
+        self.assertEqual(intersection_a_b, intersection_a_b_)
 
     def test_invert(self):
         x = Bound.CLOSED
@@ -59,6 +59,7 @@ class IntervalTestCase(unittest.TestCase):
         c = SimpleInterval(1.5, 2, Bound.CLOSED)
         d = SimpleInterval(3, 4)
         a_b = Interval(d, a, b, c)
+        print("test")
         a_b_simplified = a_b.simplify()
         a_b_simplified_ = Interval(SimpleInterval(0, 2), SimpleInterval(3, 4))
         print(a_b_simplified)

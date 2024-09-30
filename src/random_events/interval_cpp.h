@@ -53,8 +53,9 @@ public:
     BorderType left;
     BorderType right;
 
-    CPPSimpleInterval(float lower = 0, float upper = 0, BorderType left = BorderType::OPEN, BorderType right = BorderType::OPEN) {
-}
+    CPPSimpleInterval(): lower(0.0), upper(0.0), left(BorderType::OPEN), right(BorderType::OPEN) {}
+    CPPSimpleInterval(float lower, float upper, BorderType left, BorderType right): lower(lower), upper(upper),
+     left(left), right(right) {}
 
     bool operator==(const CPPAbstractSimpleSet &other) override{
         auto derived_other = (CPPSimpleInterval *) &other;

@@ -1,11 +1,10 @@
 # distutils: sources = interval_cpp.cpp
 
 from libcpp.string cimport string
-from libcpp.set cimport set
 from libcpp cimport bool
 from libcpp.memory cimport shared_ptr
 from random_events.sigma_algebra_cpp cimport (CPPAbstractSimpleSet, CPPAbstractCompositeSet, CPPAbstractSimpleSetPtr_t,
-CPPAbstractCompositeSetPtr_t, SimpleSetSet_t, SimpleSetSetPtr_t, ElementaryVariant)
+SimpleSetSetPtr_t, ElementaryVariant)
 
 
 cdef extern from "interval_cpp.h":

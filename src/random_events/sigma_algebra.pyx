@@ -1,8 +1,7 @@
 # distutils: language = c++
 
 from __future__ import annotations
-from abc import abstractmethod
-from typing_extensions import Self, TYPE_CHECKING, Type, Dict, Any
+from typing_extensions import Self, Dict, Any
 from random_events.utils import SubclassJSONSerializer
 
 

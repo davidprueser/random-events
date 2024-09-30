@@ -42,6 +42,6 @@ extensions = [
 # Build the extensions
 setup(
     name="random_events",
-    ext_modules=cythonize(extensions),
+    ext_modules=cythonize(extensions, language_level="3"),
     package_dir={'': 'src'},  # Tells setup to find packages in 'src'
 )
