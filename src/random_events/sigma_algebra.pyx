@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 from typing_extensions import Self, Dict, Any
-from random_events.utils import SubclassJSONSerializer
+from sortedcontainers import SortedSet
 
+from random_events.utils import SubclassJSONSerializer
 
 EMPTY_SET_SYMBOL = "∅"
 
@@ -14,12 +15,6 @@ cdef class AbstractSimpleSet:
 
     Simple sets are sets that can be represented as a single object.
     """
-
-    # def __init__(self):
-    #     self.cpp_object = new CPPAbstractSimpleSet()
-
-    # def __dealloc__(self):
-    #     del self.cpp_object
 
     cdef const CPPAbstractSimpleSetPtr_t as_cpp_simple_set(self):
         """
@@ -35,15 +30,14 @@ cdef class AbstractSimpleSet:
         """
         raise NotImplementedError
 
-    @staticmethod
-    cdef AbstractSimpleSet from_cpp_si(CPPAbstractSimpleSetPtr_t simple_set):
+    cdef AbstractSimpleSet from_cpp_si(self, CPPAbstractSimpleSetPtr_t simple_set):
         """
         Convert a C++ simple set to a Python simple set.
         :param simple_set: The C++ simple set
         """
         raise NotImplementedError
 
-    cdef from_cpp_simple_set_set(self, SimpleSetSetPtr_t simple_set_set):
+    cdef set[AbstractSimpleSet] from_cpp_simple_set_set(self, SimpleSetSetPtr_t simple_set_set):
         """
         Convert a C++ simple set to a Python simple set.
         :param simple_set_set: The C++ set of simple set
@@ -59,7 +53,7 @@ cdef class AbstractSimpleSet:
         """
         raise NotImplementedError
 
-    cdef complement(self):
+    cpdef complement(self):
         """
         :return: The complement of this set as disjoint set of simple sets.
         """
@@ -108,8 +102,11 @@ cdef class AbstractSimpleSet:
     def __str__(self):
         return self.to_string()
 
-    def __lt__(self, other):
-        raise NotImplementedError
+    def __eq__(self, AbstractSimpleSet other):
+        return self.cpp_object == other.cpp_object
+
+    def __lt__(self, AbstractSimpleSet other):
+        return self.cpp_object < other.cpp_object
 
     cpdef AbstractCompositeSet as_composite_set(self):
         """
@@ -117,6 +114,14 @@ cdef class AbstractSimpleSet:
         :return: The composite set
         """
         raise NotImplementedError
+
+class AbstractSimpleSetJSON(SubclassJSONSerializer):
+    """
+    Python class for Abstract Simple Sets. Needed for JSON serialization.
+    """
+
+    def __init__(self, ss: AbstractSimpleSet):
+        self.ss = ss
 
 
 cdef class AbstractCompositeSet:
@@ -126,23 +131,13 @@ cdef class AbstractCompositeSet:
     AbstractCompositeSet is a set that is composed of a disjoint union of simple sets.
     """
 
-    # def __cinit__(self):
-    #     self.cpp_object = new CPPAbstractCompositeSet()
-
-    def __init__(self, *simple_sets_py):
-        cdef AbstractSimpleSet simple_set
-        for simple_set in simple_sets_py:
-            self.cpp_object.simple_sets.get().insert(simple_set.as_cpp_simple_set())
-
-    def __dealloc__(self):
-        del self.cpp_object
 
     cdef const CPPAbstractCompositeSetPtr_t as_cpp_composite_set(self):
         """
         Convert this composite set to a C++ composite set.
         :return: The C++ composite set
         """
-        raise NotImplementedError
+        return shared_ptr[CPPAbstractCompositeSet](self.cpp_object)
 
     cdef AbstractCompositeSet from_cpp_composite_set(self, CPPAbstractCompositeSetPtr_t composite_set):
         """
@@ -272,8 +267,10 @@ cdef class AbstractCompositeSet:
         :param item: The item to check
         :return: Rather if the item is in the set or not
         """
+        cdef ElementaryVariant* cppitem
+        cppitem.f = item
         for simple_set in self.cpp_object.simple_sets.get()[0]:
-            if AbstractSimpleSet.from_cpp_si(simple_set).contains(item):
+            if simple_set.get().contains(cppitem):
                 return True
         return False
 
@@ -287,10 +284,7 @@ cdef class AbstractCompositeSet:
         if self.is_empty():
             return EMPTY_SET_SYMBOL
 
-        cdef SimpleSetSet_t simple_sets = self.cpp_object.simple_sets.get()[0]
-        cdef CPPAbstractSimpleSetPtr_t simple_set_ptr
-
-        return " u ".join([AbstractSimpleSet.from_cpp_si(simple_set_ptr).to_string() for simple_set_ptr in simple_sets])
+        return " u ".join([simple_set.to_string() for simple_set in self.simple_sets_py])
 
     def __str__(self):
         return self.to_string()
@@ -304,24 +298,24 @@ cdef class AbstractCompositeSet:
         """
         return self.cpp_object.is_disjoint()
 
-    cdef tuple[AbstractCompositeSet, AbstractCompositeSet] split_into_disjoint_and_non_disjoint(self):
-        """
-        Split this composite set into disjoint and non-disjoint parts.
-
-        This method is required for making the composite set disjoint.
-        The partitioning is done by removing every other simple set from every simple set.
-        The purified simple sets are then disjoint by definition and the pairwise intersections are (potentially) not
-        disjoint yet.
-
-        This method requires:
-            - the intersection of two simple sets as a simple set
-            - the difference_of_a_with_every_b of a simple set (A) and another simple set (B) that is completely contained in A (B ⊆ A).
-            The result of that difference_of_a_with_every_b has to be a composite set with only one simple set in it.
-
-        :return: A tuple of the disjoint and non-disjoint set.
-        """
-        cdef pair[CPPAbstractCompositeSetPtr_t, CPPAbstractCompositeSetPtr_t] result = self.cpp_object.split_into_disjoint_and_non_disjoint()
-        return self.from_cpp_composite_set(result.first), self.from_cpp_composite_set(result.second)
+    # cdef tuple[AbstractCompositeSet, AbstractCompositeSet] split_into_disjoint_and_non_disjoint(self):
+    #     """
+    #     Split this composite set into disjoint and non-disjoint parts.
+    #
+    #     This method is required for making the composite set disjoint.
+    #     The partitioning is done by removing every other simple set from every simple set.
+    #     The purified simple sets are then disjoint by definition and the pairwise intersections are (potentially) not
+    #     disjoint yet.
+    #
+    #     This method requires:
+    #         - the intersection of two simple sets as a simple set
+    #         - the difference_of_a_with_every_b of a simple set (A) and another simple set (B) that is completely contained in A (B ⊆ A).
+    #         The result of that difference_of_a_with_every_b has to be a composite set with only one simple set in it.
+    #
+    #     :return: A tuple of the disjoint and non-disjoint set.
+    #     """
+    #     cdef pair[CPPAbstractCompositeSetPtr_t, CPPAbstractCompositeSetPtr_t] result = self.cpp_object.split_into_disjoint_and_non_disjoint()
+    #     return self.from_cpp_composite_set(result.first), self.from_cpp_composite_set(result.second)
 
     cpdef AbstractCompositeSet make_disjoint(self):
         """
@@ -332,7 +326,7 @@ cdef class AbstractCompositeSet:
         return self.from_cpp_composite_set(self.cpp_object.make_disjoint())
 
     def __eq__(self, AbstractCompositeSet other):
-        return self.cpp_object == other.cpp_object
+        return self.simple_sets_py._list == other.simple_sets_py._list
 
     def __hash__(self):
         return hash(tuple(self.from_cpp_composite_set_set(self.cpp_object.simple_sets)))
@@ -354,23 +348,27 @@ cdef class AbstractCompositeSet:
         :param other: The other set
         :return: Rather this set is smaller than the other set
         """
-        return self.cpp_object < other.cpp_object
+        for a, b in zip(self.simple_sets_py, other.simple_sets_py):
+            if a == b:
+                continue
+            else:
+                return a < b
+        return len(self.simple_sets_py) < len(other.simple_sets_py)
 
-
-class AbstractCompositeSetPy(SubclassJSONSerializer, AbstractCompositeSet):
-    """
-    Python class for Abstract Composite Sets. Needed for JSON serialization.
-    """
-
-    def to_json(self) -> Dict[str, Any]:
-        return {**super().to_json(), "simple_sets": [simple_set.to_json() for simple_set in self.simple_sets]}
-
-    @classmethod
-    def _from_json(cls, data: Dict[str, Any]) -> Self:
-        return cls(*[AbstractSimpleSet.from_json(simple_set) for simple_set in data["simple_sets"]])
-
-
-
+# class AbstractCompositeSetPy(SubclassJSONSerializer, AbstractCompositeSet):
+#     """
+#     Python class for Abstract Composite Sets. Needed for JSON serialization.
+#     """
+#
+#     def to_json(self) -> Dict[str, Any]:
+#         return {**super().to_json(), "simple_sets": [simple_set.to_json() for simple_set in self.simple_sets]}
+#
+#     @classmethod
+#     def _from_json(cls, data: Dict[str, Any]) -> Self:
+#         return cls(*[AbstractSimpleSet.from_json(simple_set) for simple_set in data["simple_sets"]])
+#
+#
+#
 # Type definitions
 # if TYPE_CHECKING:
 #     SimpleSetContainer = SortedSet[AbstractSimpleSet]

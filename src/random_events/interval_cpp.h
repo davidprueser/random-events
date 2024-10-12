@@ -61,24 +61,25 @@ public:
         auto derived_other = (CPPSimpleInterval *) &other;
             return *this == *derived_other;
     }
-//    bool operator==(const CPPSimpleInterval &other) const;
+
     bool operator<(const CPPAbstractSimpleSet &other) override{
         const auto derived_other = (CPPSimpleInterval *) &other;
         return *this < *derived_other;
     }
-//    bool operator<(const CPPSimpleInterval &other) const;
+
     bool operator<=(const CPPAbstractSimpleSet &other) override{
         const auto derived_other = (CPPSimpleInterval *) &other;
         return *this <= *derived_other;
     }
-//    bool operator<=(const CPPSimpleInterval &other) const;
-//    bool operator!=(const CPPSimpleInterval &other) const;
+    bool operator==(const CPPSimpleInterval &other) const;
+    bool operator<(const CPPSimpleInterval &other) const;
+    bool operator<=(const CPPSimpleInterval &other) const;
+    bool operator!=(const CPPSimpleInterval &other) const;
 
     template<typename... Args>
     static CPPSimpleIntervalPtr_t make_shared(Args &&... args) {
         return std::make_shared<CPPSimpleInterval>(std::forward<Args>(args)...);
     };
-
 
     bool is_empty() override{
         return lower > upper or (lower == upper and (left == BorderType::OPEN or right == BorderType::OPEN));
@@ -216,16 +217,16 @@ public:
 
             auto last_simple_interval = std::dynamic_pointer_cast<CPPSimpleInterval>(*result->rbegin());
 
-            if (last_simple_interval->upper == current_simple_interval->lower &&
-                !(last_simple_interval->right == BorderType::OPEN and
-                  current_simple_interval->left == BorderType::OPEN)) {
+            if (last_simple_interval->upper > current_simple_interval->lower or (
+                last_simple_interval->upper == current_simple_interval->lower and not (
+                  last_simple_interval->right == BorderType::OPEN and
+                  current_simple_interval->left == BorderType::OPEN))) {
                 last_simple_interval->upper = current_simple_interval->upper;
                 last_simple_interval->right = current_simple_interval->right;
             } else {
                 result->insert(current_simple_interval);
             }
         }
-
         return CPPInterval::make_shared(result);
     };
 

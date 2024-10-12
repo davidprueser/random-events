@@ -1,3 +1,4 @@
+from random_events.interval import SimpleIntervalJSON
 from random_events.sigma_algebra cimport AbstractSimpleSet, AbstractCompositeSet
 from random_events.interval_cpp cimport CPPSimpleInterval, CPPInterval, BorderType, CPPSimpleIntervalPtr_t, CPPIntervalPtr_t
 from random_events.sigma_algebra_cpp cimport (CPPAbstractSimpleSet, CPPAbstractCompositeSet, CPPAbstractSimpleSetPtr_t,
@@ -6,9 +7,15 @@ from libcpp.set cimport set as cppset
 from libc.stdio cimport printf
 from libcpp.string cimport string
 from libcpp.memory cimport make_shared, shared_ptr
+from random_events.sigma_algebra import AbstractSimpleSetJSON
+
 
 cdef class SimpleInterval(AbstractSimpleSet):
     cdef CPPSimpleInterval *cpp_simple_interval_object
+    cdef public float lower
+    cdef public float upper
+    cdef public int left
+    cdef public int right
 
     cdef const CPPAbstractSimpleSetPtr_t as_cpp_simple_set(self)
 
@@ -18,10 +25,9 @@ cdef class SimpleInterval(AbstractSimpleSet):
 
     cpdef bint is_singleton(self)
 
-    @staticmethod
-    cdef AbstractSimpleSet from_cpp_si(CPPAbstractSimpleSetPtr_t simple_set)
+    cdef AbstractSimpleSet from_cpp_si(self, CPPAbstractSimpleSetPtr_t simple_set)
 
-    cdef from_cpp_simple_set_set(self, SimpleSetSetPtr_t simple_set_set)
+    cdef set[SimpleInterval] from_cpp_simple_set_set(self, SimpleSetSetPtr_t simple_set_set)
 
     cpdef AbstractSimpleSet intersection_with(self, AbstractSimpleSet other)
 
@@ -36,9 +42,11 @@ cdef class SimpleInterval(AbstractSimpleSet):
 
 cdef class Interval(AbstractCompositeSet):
     cdef CPPInterval *cpp_interval_object
+    cdef list simple_intervals  # Keep references to SimpleIntervals
+
+    cdef AbstractSimpleSet from_cpp_si(self, CPPAbstractSimpleSetPtr_t simple_set)
 
     cdef const CPPAbstractCompositeSetPtr_t as_cpp_composite_set(self)
-
 
     cdef AbstractCompositeSet from_cpp_composite_set(self, CPPAbstractCompositeSetPtr_t composite_set)
 

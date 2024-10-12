@@ -1,6 +1,7 @@
 import unittest
 from sortedcontainers import SortedSet
-from random_events.interval import SimpleInterval, Bound, SimpleIntervalPy, Interval, open
+from random_events.interval import SimpleIntervalJSON, SimpleInterval, Bound, Interval, open, IntervalJSON
+from random_events.sigma_algebra import AbstractSimpleSetJSON
 
 
 class SimpleIntervalTestCase(unittest.TestCase):
@@ -12,12 +13,10 @@ class SimpleIntervalTestCase(unittest.TestCase):
 
         intersection_a_b = a.intersection_with(b)
         intersection_a_b_ = SimpleInterval(0.5, 1, Bound.OPEN, Bound.OPEN)
-        # print(dir(random_events.interval))
-        # print(dir(random_events.sigma_algebra))
+        intersection_a_c = a.intersection_with(c)
+        intersection_a_c_ = SimpleInterval(0.5, 0.75, Bound.OPEN, Bound.CLOSED)
+        self.assertEqual(intersection_a_c, intersection_a_c_)
         self.assertEqual(intersection_a_b, intersection_a_b_)
-
-    def test_invert(self):
-        x = Bound.CLOSED
 
     def test_is_empty(self):
         a = SimpleInterval()
@@ -46,7 +45,7 @@ class SimpleIntervalTestCase(unittest.TestCase):
 
     def test_to_json(self):
         a = SimpleInterval(0, 1)
-        b = SimpleIntervalPy.from_json(a.to_json())
+        b = SimpleIntervalJSON.from_json(a.to_json())
         self.assertIsInstance(b, SimpleInterval)
         self.assertEqual(a, b)
 
@@ -59,12 +58,9 @@ class IntervalTestCase(unittest.TestCase):
         c = SimpleInterval(1.5, 2, Bound.CLOSED)
         d = SimpleInterval(3, 4)
         a_b = Interval(d, a, b, c)
-        print("test")
         a_b_simplified = a_b.simplify()
         a_b_simplified_ = Interval(SimpleInterval(0, 2), SimpleInterval(3, 4))
-        print(a_b_simplified)
-        print(a_b_simplified_)
-        self.assertEqual(a_b_simplified, a_b_simplified_)
+        self.assertEqual(a_b_simplified_, a_b_simplified)
 
     def test_union(self):
         a = SimpleInterval(0, 1)
@@ -82,7 +78,8 @@ class IntervalTestCase(unittest.TestCase):
     def test_to_json(self):
         a = SimpleInterval(0, 1)
         b = Interval(a)
-        c = SimpleIntervalPy.from_json(b.to_json())
+        x = b.to_json()
+        c = SimpleIntervalJSON.from_json(x)
         self.assertIsInstance(c, Interval)
         self.assertEqual(b, c)
 

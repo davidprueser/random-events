@@ -15,9 +15,9 @@ cdef extern from "sigma_algebra_cpp.h":
     ctypedef shared_ptr[SimpleSetSet_t] SimpleSetSetPtr_t;
 
     cdef union ElementaryVariant:
-        float *f
-        int *i
-        string *s
+        float f
+        int i
+        string s
 
 
     cdef cppclass CPPAbstractSimpleSet:

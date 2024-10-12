@@ -48,24 +48,29 @@ cdef class SimpleInterval(AbstractSimpleSet):
     Represents a simple interval.
     """
 
-    def __init__(self, float lower = 0, float upper = 0, int left = Bound.OPEN, int right = Bound.OPEN):
+    def __cinit__(self, float lower = 0, float upper = 0, int left = Bound.OPEN, int right = Bound.OPEN):
+        self.lower = lower
+        self.upper = upper
+        self.left = left
+        self.right = right
+
         self.cpp_simple_interval_object = new CPPSimpleInterval(lower, upper, <BorderType> left, <BorderType> right)
-        self.cpp_object = <CPPAbstractSimpleSet*> self.cpp_simple_interval_object
+        self.cpp_object = self.cpp_simple_interval_object
+        self.json_serializer = SimpleIntervalJSON(self)
 
     cdef const CPPAbstractSimpleSetPtr_t as_cpp_simple_set(self):
         return shared_ptr[CPPAbstractSimpleSet](self.cpp_object)
 
-    # cdef const SimpleSetSetPtr_t as_cpp_simple_set_set(self):
-    #     cdef SimpleSetSet_t simple_set_set = cppset[CPPAbstractSimpleSetPtr_t]()
-    #     simple_set_set.insert(self.as_cpp_simple_set())
-    #     return shared_ptr[SimpleSetSet_t](simple_set_set)
-
     def __hash__(self):
-        return hash((self.cpp_simple_interval_object.lower, self.cpp_simple_interval_object.upper, self.cpp_simple_interval_object.left,
-                     self.cpp_simple_interval_object.right))
+        return hash((self.lower, self.upper, self.left, self.right))
 
     def __lt__(self, SimpleInterval other):
-        return self.cpp_simple_interval_object < other.cpp_simple_interval_object
+        if self.lower == other.lower:
+            return self.upper < other.upper
+        return self.lower < other.lower
+
+    def __eq__(self, SimpleInterval other):
+        return self.lower == other.lower and self.upper == other.upper and self.left == other.left and self.right == other.right
 
     def __repr__(self):
         return AbstractSimpleSet.to_string(self)
@@ -85,23 +90,26 @@ cdef class SimpleInterval(AbstractSimpleSet):
         """
         return self.cpp_simple_interval_object.is_singleton()
 
-    @staticmethod
-    cdef AbstractSimpleSet from_cpp_si(CPPAbstractSimpleSetPtr_t simple_set):
-        cdef AbstractSimpleSet simple_set_new = SimpleInterval
-        simple_set_new.cpp_object = simple_set.get()
-        return simple_set_new
+    cdef AbstractSimpleSet from_cpp_si(self, CPPAbstractSimpleSetPtr_t simple_set):
+        # Cast the CPPAbstractSimpleSet pointer to CPPSimpleInterval pointer
+        cdef CPPSimpleInterval * cpp_interval = <CPPSimpleInterval *> simple_set.get()
 
-    cdef from_cpp_simple_set_set(self, SimpleSetSetPtr_t simple_set_set):
+        # Make sure that cpp_interval is not NULL (i.e., ensure the cast was valid)
+        if cpp_interval is not NULL:
+            # Create and return a new SimpleInterval Python object
+            return SimpleInterval(cpp_interval.lower, cpp_interval.upper, cpp_interval.left, cpp_interval.right)
+        else:
+            raise ValueError("Invalid CPPSimpleInterval pointer.")
+
+    cdef set[SimpleInterval] from_cpp_simple_set_set(self, SimpleSetSetPtr_t simple_set_set):
         cdef set[SimpleInterval] py_simple_sets = set[SimpleInterval]()
         for simple_set in simple_set_set.get()[0]:
-            sio = AbstractSimpleSet.from_cpp_si(simple_set)
-            sio.cpp_object = simple_set.get()
+            sio = self.from_cpp_si(simple_set)
             py_simple_sets.add(sio)
-        py_sorted_simple_sets = SortedSet(py_simple_sets)
-        return py_sorted_simple_sets
+        return py_simple_sets
 
     cpdef AbstractSimpleSet intersection_with(self, AbstractSimpleSet other):
-        return AbstractSimpleSet.from_cpp_si(self.cpp_object.intersection_with(shared_ptr[CPPAbstractSimpleSet](other.cpp_object)))
+        return self.from_cpp_si(self.cpp_object.intersection_with(shared_ptr[CPPAbstractSimpleSet](other.cpp_object)))
 
     cpdef complement(self):
         return self.from_cpp_simple_set_set(self.cpp_object.complement())
@@ -120,42 +128,73 @@ cdef class SimpleInterval(AbstractSimpleSet):
         """
         return ((self.cpp_simple_interval_object.lower + self.cpp_simple_interval_object.upper) / 2) + self.cpp_simple_interval_object.lower
 
+    def to_json(self):
+        return self.json_serializer.to_json()
 
-class SimpleIntervalPy(SubclassJSONSerializer, SimpleInterval):
+
+class SimpleIntervalJSON(SubclassJSONSerializer):
+    def __init__(self, si: SimpleInterval):
+        self.si = si
+
     def to_json(self) -> Dict[str, Any]:
-        return {**super().to_json(), 'lower': self.cpp_simple_interval_object.lower, 'upper': self.cpp_simple_interval_object.upper, 'left': Bound.get_name(self.cpp_simple_interval_object.left),
-                'right': Bound.get_name(self.cpp_simple_interval_object.right)}
+        return {**super().to_json(), 'lower': self.si.lower, 'upper': self.si.upper, 'left': Bound.get_name(self.si.left),
+                'right': Bound.get_name(self.si.right)}
 
     @classmethod
     def _from_json(cls, data: Dict[str, Any]) -> Self:
-        return cls(data['lower'], data['upper'], Bound[data['left']], Bound[data['right']])
+        left_val = getattr(Bound, data['left'])
+        right_val = getattr(Bound, data['right'])
+        return SimpleInterval(data['lower'], data['upper'], left_val, right_val)
 
 
 cdef class Interval(AbstractCompositeSet):
 
-    def __cinit__(self):
-        self.cpp_interval_object = new CPPInterval()
+    def __cinit__(self, *simple_sets_py):
+        self.simple_intervals = []
+        self.json_serializer = IntervalJSON(self)
+        self.simple_sets_py = SortedSet(simple_sets_py)
+        self.cpp_object = new CPPInterval()
 
-    def __init__(self, *simple_sets_py):
-        cdef AbstractSimpleSet simple_set
-        for simple_set in simple_sets_py:
-            self.cpp_interval_object.simple_sets.get().insert(simple_set.as_cpp_simple_set())
-        # self.cpp_object = <AbstractCompositeSet.cpp_object*> self.cpp_interval_object
+        cdef SimpleInterval simple_set
+        for simple_set in self.simple_sets_py:
+            self.simple_intervals.append(simple_set)  # Keep reference
+            self.cpp_object.simple_sets.get().insert(simple_set.as_cpp_simple_set())
 
-    def __dealloc__(self):
-        del self.cpp_interval_object
+    # def __dealloc__(self):
+    #     print("Deallocating Interval")
+    #     del self.cpp_object
 
-    def __eq__(self, Interval other):
-        return self.cpp_interval_object == other.cpp_interval_object
+    # cdef const SimpleSetSetPtr_t as_cpp_composite_set(self):
+    #     for simple_set in self.simple_sets_py:
+    #         self.cpp_object.simple_sets.get().insert(<const CPPAbstractSimpleSetPtr_t> simple_set.as_cpp_simple_set())
+    #     return self.cpp_object.simple_sets
 
-    cdef from_cpp_composite_set_set(self, SimpleSetSetPtr_t si):
-        cdef set[SimpleInterval] py_simple_sets = set[SimpleInterval]()
-        for simple_set in si.get()[0]:
-            sio = AbstractSimpleSet.__new__(AbstractSimpleSet)
-            sio.cpp_object = AbstractSimpleSet.from_cpp_si(simple_set)
-            py_simple_sets.add(sio)
-        py_sorted_simple_sets = SortedSet(py_simple_sets)
-        return py_sorted_simple_sets
+    cdef AbstractSimpleSet from_cpp_si(self, CPPAbstractSimpleSetPtr_t simple_set):
+        # Cast the CPPAbstractSimpleSet pointer to CPPSimpleInterval pointer
+        cdef CPPSimpleInterval * cpp_interval = <CPPSimpleInterval *> simple_set.get()
+
+        # Make sure that cpp_interval is not NULL (i.e., ensure the cast was valid)
+        if cpp_interval is not NULL:
+            # Create and return a new SimpleInterval Python object
+            return SimpleInterval(cpp_interval.lower, cpp_interval.upper, cpp_interval.left, cpp_interval.right)
+        else:
+            raise ValueError("Invalid CPPSimpleInterval pointer.")
+
+    cdef AbstractCompositeSet from_cpp_composite_set(self, CPPAbstractCompositeSetPtr_t composite_set):
+        cdef CPPInterval * cpp_interval = <CPPInterval *> composite_set.get()
+
+        if cpp_interval is not NULL:
+            simple_intervals = self.from_cpp_composite_set_set(cpp_interval.simple_sets)
+            return Interval(*simple_intervals)
+        else:
+            raise ValueError("Invalid CPPInterval pointer.")
+
+    cdef from_cpp_composite_set_set(self, SimpleSetSetPtr_t composite_set):
+        cdef list py_simple_sets = []  # Initialize an empty list
+        for simple_set in composite_set.get()[0]:  # Iterate over the simple sets
+            sio = self.from_cpp_si(simple_set)  # Convert C++ SimpleSet to Python SimpleInterval
+            py_simple_sets.append(sio)  # Append to the list
+        return py_simple_sets  # Return the list of SimpleInt
 
     cpdef AbstractCompositeSet simplify(self):
         return self.from_cpp_composite_set(self.cpp_object.simplify())
@@ -170,13 +209,22 @@ cdef class Interval(AbstractCompositeSet):
         """
         :return: True if the interval is a singleton (contains only one value), False otherwise.
         """
-
-        # if self.i_.simple_sets.get().size() == 1:
-        #     first_elem = self._from_cpp_si_set(self.i_.simple_sets)[0]
-        #     return first_elem.is_singleton()
-        #
-        # return False
         return self.cpp_interval_object.is_singleton()
+
+    def to_json(self):
+        self.json_serializer.to_json()
+
+
+class IntervalJSON(SubclassJSONSerializer):
+    def __init__(self, i: Interval):
+        self.i = i
+    def to_json(self) -> Dict[str, Any]:
+        return {**super().to_json(), "simple_sets": [simple_set.to_json() for simple_set in self.i.simple_sets_py]}
+
+    @classmethod
+    def _from_json(cls, data: Dict[str, Any]) -> Self:
+        return cls(*[AbstractSimpleSetJSON.from_json(simple_set) for simple_set in data["simple_sets"]])
+
 
 cpdef Interval open(float left, float right):
     """

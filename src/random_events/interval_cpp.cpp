@@ -2,27 +2,27 @@
 #include <iostream>
 #include <limits>
 
-//bool CPPSimpleInterval::operator==(const CPPSimpleInterval &other) const{
-//    return lower == other.lower and upper == other.upper and left == other.left and right == other.right;
-//}
-//
-//bool CPPSimpleInterval::operator<(const CPPSimpleInterval &other) const{
-//    if (lower == other.lower) {
-//        return upper < other.upper;
-//    }
-//    return lower < other.lower;
-//}
+bool CPPSimpleInterval::operator==(const CPPSimpleInterval &other) const{
+    return lower == other.lower and upper == other.upper and left == other.left and right == other.right;
+}
 
-//bool CPPSimpleInterval::operator<=(const CPPSimpleInterval &other) const{
-//    if (lower == other.lower) {
-//        return upper <= other.upper;
-//    }
-//    return lower <= other.lower;
-//}
-//
-//bool CPPSimpleInterval::operator!=(const CPPSimpleInterval &other) const{
-//    return !operator==(other);
-//}
+bool CPPSimpleInterval::operator<(const CPPSimpleInterval &other) const{
+    if (lower == other.lower) {
+        return upper < other.upper;
+    }
+    return lower < other.lower;
+}
+
+bool CPPSimpleInterval::operator<=(const CPPSimpleInterval &other) const{
+    if (lower == other.lower) {
+        return upper <= other.upper;
+    }
+    return lower <= other.lower;
+}
+
+bool CPPSimpleInterval::operator!=(const CPPSimpleInterval &other) const{
+    return !operator==(other);
+}
 
 bool CPPSimpleInterval::is_singleton() {
     return lower == upper and left == BorderType::CLOSED and right == BorderType::CLOSED;
