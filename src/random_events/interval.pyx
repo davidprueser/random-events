@@ -4,6 +4,7 @@ from __future__ import annotations
 from sortedcontainers import SortedSet
 from typing_extensions import Dict, Any, Self
 from random_events.utils import SubclassJSONSerializer
+from random_events.sigma_algebra import AbstractSimpleSetJSON, AbstractCompositeSetJSON
 
 cdef class Bound:
     OPEN = 0
@@ -48,7 +49,7 @@ cdef class SimpleInterval(AbstractSimpleSet):
     Represents a simple interval.
     """
 
-    def __cinit__(self, float lower = 0, float upper = 0, int left = Bound.OPEN, int right = Bound.OPEN):
+    def __init__(self, float lower = 0, float upper = 0, int left = Bound.OPEN, int right = Bound.OPEN):
         self.lower = lower
         self.upper = upper
         self.left = left
@@ -132,16 +133,16 @@ cdef class SimpleInterval(AbstractSimpleSet):
         return self.json_serializer.to_json()
 
 
-class SimpleIntervalJSON(SubclassJSONSerializer):
-    def __init__(self, si: SimpleInterval):
-        self.si = si
+class SimpleIntervalJSON(AbstractSimpleSetJSON):
+    def __init__(self, ss: SimpleInterval):
+        self.ss = ss
 
     def to_json(self) -> Dict[str, Any]:
-        return {**super().to_json(), 'lower': self.si.lower, 'upper': self.si.upper, 'left': Bound.get_name(self.si.left),
-                'right': Bound.get_name(self.si.right)}
+        return {**super().to_json(), 'lower': self.ss.lower, 'upper': self.ss.upper, 'left': Bound.get_name(self.ss.left),
+                'right': Bound.get_name(self.ss.right)}
 
-    @classmethod
-    def _from_json(cls, data: Dict[str, Any]) -> Self:
+    @staticmethod
+    def _from_json(data: Dict[str, Any]):
         left_val = getattr(Bound, data['left'])
         right_val = getattr(Bound, data['right'])
         return SimpleInterval(data['lower'], data['upper'], left_val, right_val)
@@ -149,25 +150,14 @@ class SimpleIntervalJSON(SubclassJSONSerializer):
 
 cdef class Interval(AbstractCompositeSet):
 
-    def __cinit__(self, *simple_sets_py):
-        self.simple_intervals = []
-        self.json_serializer = IntervalJSON(self)
-        self.simple_sets_py = SortedSet(simple_sets_py)
+    def __init__(self, *simple_sets_py):
+        super().__init__(*simple_sets_py)
+        self.json_serializer = IntervalJSON(self.simple_sets_py)
         self.cpp_object = new CPPInterval()
 
         cdef SimpleInterval simple_set
         for simple_set in self.simple_sets_py:
-            self.simple_intervals.append(simple_set)  # Keep reference
             self.cpp_object.simple_sets.get().insert(simple_set.as_cpp_simple_set())
-
-    # def __dealloc__(self):
-    #     print("Deallocating Interval")
-    #     del self.cpp_object
-
-    # cdef const SimpleSetSetPtr_t as_cpp_composite_set(self):
-    #     for simple_set in self.simple_sets_py:
-    #         self.cpp_object.simple_sets.get().insert(<const CPPAbstractSimpleSetPtr_t> simple_set.as_cpp_simple_set())
-    #     return self.cpp_object.simple_sets
 
     cdef AbstractSimpleSet from_cpp_si(self, CPPAbstractSimpleSetPtr_t simple_set):
         # Cast the CPPAbstractSimpleSet pointer to CPPSimpleInterval pointer
@@ -212,19 +202,19 @@ cdef class Interval(AbstractCompositeSet):
         return self.cpp_interval_object.is_singleton()
 
     def to_json(self):
-        self.json_serializer.to_json()
+        return self.json_serializer.to_json()
 
 
-class IntervalJSON(SubclassJSONSerializer):
-    def __init__(self, i: Interval):
-        self.i = i
+class IntervalJSON(AbstractCompositeSetJSON):
+    def __init__(self, simple_sets):
+        super().__init__(simple_sets)
+
     def to_json(self) -> Dict[str, Any]:
-        return {**super().to_json(), "simple_sets": [simple_set.to_json() for simple_set in self.i.simple_sets_py]}
+        return super().to_json()
 
-    @classmethod
-    def _from_json(cls, data: Dict[str, Any]) -> Self:
-        return cls(*[AbstractSimpleSetJSON.from_json(simple_set) for simple_set in data["simple_sets"]])
-
+    @staticmethod
+    def _from_json(data: Dict[str, Any]):
+        return Interval(*[AbstractSimpleSetJSON.from_json(simple_set) for simple_set in data['simple_sets']])
 
 cpdef Interval open(float left, float right):
     """

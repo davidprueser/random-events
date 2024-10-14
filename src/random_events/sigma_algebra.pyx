@@ -1,7 +1,7 @@
 # distutils: language = c++
 
 from __future__ import annotations
-from typing_extensions import Self, Dict, Any
+from typing_extensions import Self, Dict, Any, TYPE_CHECKING
 from sortedcontainers import SortedSet
 
 from random_events.utils import SubclassJSONSerializer
@@ -15,6 +15,8 @@ cdef class AbstractSimpleSet:
 
     Simple sets are sets that can be represented as a single object.
     """
+    def __init__(self):
+        self.json_serializer = AbstractSimpleSetJSON(self)
 
     cdef const CPPAbstractSimpleSetPtr_t as_cpp_simple_set(self):
         """
@@ -115,14 +117,15 @@ cdef class AbstractSimpleSet:
         """
         raise NotImplementedError
 
+    def to_json(self):
+        return self.json_serializer.to_json()
+
 class AbstractSimpleSetJSON(SubclassJSONSerializer):
     """
     Python class for Abstract Simple Sets. Needed for JSON serialization.
     """
-
-    def __init__(self, ss: AbstractSimpleSet):
-        self.ss = ss
-
+    def __init__(self, simple_set: AbstractSimpleSet):
+        self.simple_set = simple_set
 
 cdef class AbstractCompositeSet:
     """
@@ -130,7 +133,9 @@ cdef class AbstractCompositeSet:
 
     AbstractCompositeSet is a set that is composed of a disjoint union of simple sets.
     """
-
+    def __init__(self, *simple_sets_py: SimpleSetContainer):
+        self.simple_sets_py = SortedSet(simple_sets_py)
+        self.json_serializer = AbstractCompositeSetJSON(self.simple_sets_py)
 
     cdef const CPPAbstractCompositeSetPtr_t as_cpp_composite_set(self):
         """
@@ -355,22 +360,23 @@ cdef class AbstractCompositeSet:
                 return a < b
         return len(self.simple_sets_py) < len(other.simple_sets_py)
 
-# class AbstractCompositeSetPy(SubclassJSONSerializer, AbstractCompositeSet):
-#     """
-#     Python class for Abstract Composite Sets. Needed for JSON serialization.
-#     """
-#
-#     def to_json(self) -> Dict[str, Any]:
-#         return {**super().to_json(), "simple_sets": [simple_set.to_json() for simple_set in self.simple_sets]}
-#
-#     @classmethod
-#     def _from_json(cls, data: Dict[str, Any]) -> Self:
-#         return cls(*[AbstractSimpleSet.from_json(simple_set) for simple_set in data["simple_sets"]])
-#
-#
-#
-# Type definitions
-# if TYPE_CHECKING:
-#     SimpleSetContainer = SortedSet[AbstractSimpleSet]
-# else:
-#     SimpleSetContainer = SortedSet
+    def to_json(self):
+        return self.json_serializer.to_json()
+
+class AbstractCompositeSetJSON(SubclassJSONSerializer):
+    """
+    Python class for Abstract Composite Sets. Needed for JSON serialization.
+    """
+
+    def __init__(self, simple_sets):
+        self.simple_sets = simple_sets
+
+    def to_json(self) -> Dict[str, Any]:
+        return {**super().to_json(), "simple_sets": [simple_set.to_json() for simple_set in self.simple_sets]}
+
+
+
+if TYPE_CHECKING:
+    SimpleSetContainer = SortedSet[AbstractSimpleSet]
+else:
+    SimpleSetContainer = SortedSet

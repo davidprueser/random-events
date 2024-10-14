@@ -1,6 +1,6 @@
 import unittest
 from sortedcontainers import SortedSet
-from random_events.interval import SimpleIntervalJSON, SimpleInterval, Bound, Interval, open, IntervalJSON
+from random_events.interval import SimpleIntervalJSON, SimpleInterval, Bound, IntervalJSON, Interval, open
 from random_events.sigma_algebra import AbstractSimpleSetJSON
 
 
@@ -45,7 +45,7 @@ class SimpleIntervalTestCase(unittest.TestCase):
 
     def test_to_json(self):
         a = SimpleInterval(0, 1)
-        b = SimpleIntervalJSON.from_json(a.to_json())
+        b = AbstractSimpleSetJSON.from_json(a.to_json())
         self.assertIsInstance(b, SimpleInterval)
         self.assertEqual(a, b)
 
@@ -78,8 +78,7 @@ class IntervalTestCase(unittest.TestCase):
     def test_to_json(self):
         a = SimpleInterval(0, 1)
         b = Interval(a)
-        x = b.to_json()
-        c = SimpleIntervalJSON.from_json(x)
+        c = AbstractSimpleSetJSON.from_json(b.to_json())
         self.assertIsInstance(c, Interval)
         self.assertEqual(b, c)
 

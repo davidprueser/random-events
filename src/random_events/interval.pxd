@@ -7,7 +7,6 @@ from libcpp.set cimport set as cppset
 from libc.stdio cimport printf
 from libcpp.string cimport string
 from libcpp.memory cimport make_shared, shared_ptr
-from random_events.sigma_algebra import AbstractSimpleSetJSON
 
 
 cdef class SimpleInterval(AbstractSimpleSet):
@@ -42,7 +41,6 @@ cdef class SimpleInterval(AbstractSimpleSet):
 
 cdef class Interval(AbstractCompositeSet):
     cdef CPPInterval *cpp_interval_object
-    cdef list simple_intervals  # Keep references to SimpleIntervals
 
     cdef AbstractSimpleSet from_cpp_si(self, CPPAbstractSimpleSetPtr_t simple_set)
 
