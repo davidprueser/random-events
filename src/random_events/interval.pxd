@@ -32,7 +32,7 @@ cdef class SimpleInterval(AbstractSimpleSet):
 
     cpdef complement(self)
 
-    cpdef bint contains(self, float item) except *
+    cpdef bint contains(self, item) except *
 
     cpdef str non_empty_to_string(self)
 

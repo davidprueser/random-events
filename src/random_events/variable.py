@@ -1,7 +1,7 @@
 from typing_extensions import Self, Type, Dict, Any, Union
 
 from .interval_old import Interval, SimpleInterval, reals
-from .set import Set, SetElement
+from .set_old import Set, SetElement
 from .sigma_algebra_old import AbstractCompositeSet
 from .utils import SubclassJSONSerializer
 

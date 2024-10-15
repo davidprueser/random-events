@@ -67,7 +67,7 @@ cdef class AbstractSimpleSet:
         """
         raise NotImplementedError
 
-    cpdef bint contains(self, float item) except *:
+    cpdef bint contains(self, item) except *:
         """
         Check if this set contains an item.
         :param item: The item to check
@@ -120,6 +120,7 @@ cdef class AbstractSimpleSet:
     def to_json(self):
         return self.json_serializer.to_json()
 
+
 class AbstractSimpleSetJSON(SubclassJSONSerializer):
     """
     Python class for Abstract Simple Sets. Needed for JSON serialization.
@@ -127,15 +128,16 @@ class AbstractSimpleSetJSON(SubclassJSONSerializer):
     def __init__(self, simple_set: AbstractSimpleSet):
         self.simple_set = simple_set
 
+
 cdef class AbstractCompositeSet:
     """
     Abstract class for composite sets.
 
     AbstractCompositeSet is a set that is composed of a disjoint union of simple sets.
     """
-    def __init__(self, *simple_sets_py: SimpleSetContainer):
-        self.simple_sets_py = SortedSet(simple_sets_py)
-        self.json_serializer = AbstractCompositeSetJSON(self.simple_sets_py)
+    def __init__(self, *simple_sets: SimpleSetContainer):
+        self.simple_sets = SortedSet(simple_sets)
+        self.json_serializer = AbstractCompositeSetJSON(self)
 
     cdef const CPPAbstractCompositeSetPtr_t as_cpp_composite_set(self):
         """
@@ -266,16 +268,16 @@ cdef class AbstractCompositeSet:
         """
         return self.cpp_object.is_empty()
 
-    cpdef bint contains(self, float item):
+    cpdef bint contains(self, item):
         """
         Check if this set contains an item.
         :param item: The item to check
         :return: Rather if the item is in the set or not
         """
-        cdef ElementaryVariant* cppitem
-        cppitem.f = item
+        cdef ElementaryVariant* cpp_item
+        cpp_item.f = item
         for simple_set in self.cpp_object.simple_sets.get()[0]:
-            if simple_set.get().contains(cppitem):
+            if simple_set.get().contains(cpp_item):
                 return True
         return False
 
@@ -289,7 +291,7 @@ cdef class AbstractCompositeSet:
         if self.is_empty():
             return EMPTY_SET_SYMBOL
 
-        return " u ".join([simple_set.to_string() for simple_set in self.simple_sets_py])
+        return " u ".join([simple_set.to_string() for simple_set in self.simple_sets])
 
     def __str__(self):
         return self.to_string()
@@ -331,7 +333,7 @@ cdef class AbstractCompositeSet:
         return self.from_cpp_composite_set(self.cpp_object.make_disjoint())
 
     def __eq__(self, AbstractCompositeSet other):
-        return self.simple_sets_py._list == other.simple_sets_py._list
+        return self.simple_sets._list == other.simple_sets._list
 
     def __hash__(self):
         return hash(tuple(self.from_cpp_composite_set_set(self.cpp_object.simple_sets)))
@@ -353,26 +355,28 @@ cdef class AbstractCompositeSet:
         :param other: The other set
         :return: Rather this set is smaller than the other set
         """
-        for a, b in zip(self.simple_sets_py, other.simple_sets_py):
+        for a, b in zip(self.simple_sets, other.simple_sets):
             if a == b:
                 continue
             else:
                 return a < b
-        return len(self.simple_sets_py) < len(other.simple_sets_py)
+        return len(self.simple_sets) < len(other.simple_sets)
 
     def to_json(self):
         return self.json_serializer.to_json()
+
 
 class AbstractCompositeSetJSON(SubclassJSONSerializer):
     """
     Python class for Abstract Composite Sets. Needed for JSON serialization.
     """
 
-    def __init__(self, simple_sets):
-        self.simple_sets = simple_sets
+    def __init__(self, composite_set: AbstractCompositeSet):
+        self.composite_set = composite_set
 
     def to_json(self) -> Dict[str, Any]:
-        return {**super().to_json(), "simple_sets": [simple_set.to_json() for simple_set in self.simple_sets]}
+        return {**super().to_json(), "simple_sets": [simple_set.to_json() for simple_set in self.composite_set.simple_sets]}
+
 
 
 

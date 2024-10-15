@@ -4,7 +4,7 @@ import plotly.graph_objects as go
 
 from random_events.interval_old import *
 from random_events.product_algebra import SimpleEvent, Event
-from random_events.set import SetElement, Set
+from random_events.set_old import SetElement, Set
 from random_events.sigma_algebra_old import AbstractSimpleSet
 from random_events.variable import Continuous, Symbolic
 

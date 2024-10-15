@@ -24,7 +24,7 @@ cdef class AbstractSimpleSet:
 
     cpdef bint is_empty(self) except *
 
-    cpdef bint contains(self, float item) except *
+    cpdef bint contains(self, item) except *
 
     cdef str non_empty_to_string(self)
 
@@ -38,7 +38,7 @@ cdef class AbstractSimpleSet:
 cdef class AbstractCompositeSet:
     cdef CPPAbstractCompositeSet *cpp_object
     cdef public json_serializer
-    cdef public simple_sets_py
+    cdef public simple_sets
 
     cdef const CPPAbstractCompositeSetPtr_t as_cpp_composite_set(self)
 
@@ -71,7 +71,7 @@ cdef class AbstractCompositeSet:
 
     cpdef bint is_empty(self)
 
-    cpdef bint contains(self, float item)
+    cpdef bint contains(self, item)
 
     cpdef str to_string(self)
 

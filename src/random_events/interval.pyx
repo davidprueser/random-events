@@ -27,22 +27,11 @@ cdef class Bound:
         return Bound.OPEN if first == Bound.OPEN or second == Bound.OPEN else Bound.CLOSED
 
     @classmethod
-    def _names(cls):
-        return {k for k, v in cls.__dict__.items() if not k.startswith('_')}
-
-    @classmethod
     def get_name(cls, int value):
         for name, val in cls.__dict__.items():
             if val == value and not name.startswith('_'):
                 return name
         return None
-
-    def get_value(self):
-        for name, val in self.__dict__.items():
-            if name == name and not name.startswith('_'):
-                return val
-        return None
-
 
 cdef class SimpleInterval(AbstractSimpleSet):
     """
@@ -115,8 +104,8 @@ cdef class SimpleInterval(AbstractSimpleSet):
     cpdef complement(self):
         return self.from_cpp_simple_set_set(self.cpp_object.complement())
 
-    cpdef bint contains(self, float item) except *:
-        return self.cpp_simple_interval_object.contains(item)
+    cpdef bint contains(self, item) except *:
+        return self.cpp_simple_interval_object.contains(<float> item)
 
     cpdef str non_empty_to_string(self):
         left_bracket = '[' if self.cpp_simple_interval_object.left == Bound.CLOSED else '('
@@ -150,13 +139,13 @@ class SimpleIntervalJSON(AbstractSimpleSetJSON):
 
 cdef class Interval(AbstractCompositeSet):
 
-    def __init__(self, *simple_sets_py):
-        super().__init__(*simple_sets_py)
-        self.json_serializer = IntervalJSON(self.simple_sets_py)
+    def __init__(self, *simple_sets):
+        super().__init__(*simple_sets)
+        self.json_serializer = IntervalJSON(self)
         self.cpp_object = new CPPInterval()
 
         cdef SimpleInterval simple_set
-        for simple_set in self.simple_sets_py:
+        for simple_set in self.simple_sets:
             self.cpp_object.simple_sets.get().insert(simple_set.as_cpp_simple_set())
 
     cdef AbstractSimpleSet from_cpp_si(self, CPPAbstractSimpleSetPtr_t simple_set):
@@ -206,8 +195,8 @@ cdef class Interval(AbstractCompositeSet):
 
 
 class IntervalJSON(AbstractCompositeSetJSON):
-    def __init__(self, simple_sets):
-        super().__init__(simple_sets)
+    def __init__(self, composite_set: Interval):
+        super().__init__(composite_set)
 
     def to_json(self) -> Dict[str, Any]:
         return super().to_json()
@@ -215,6 +204,7 @@ class IntervalJSON(AbstractCompositeSetJSON):
     @staticmethod
     def _from_json(data: Dict[str, Any]):
         return Interval(*[AbstractSimpleSetJSON.from_json(simple_set) for simple_set in data['simple_sets']])
+
 
 cpdef Interval open(float left, float right):
     """
