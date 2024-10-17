@@ -23,7 +23,7 @@ cdef class AbstractSimpleSet:
         Convert this simple set to a C++ simple set.
         :return: The C++ simple set
         """
-        raise NotImplementedError
+        return shared_ptr[CPPAbstractSimpleSet](self.cpp_object)
 
     cdef const SimpleSetSetPtr_t as_cpp_simple_set_set(self):
         """
@@ -44,7 +44,11 @@ cdef class AbstractSimpleSet:
         Convert a C++ simple set to a Python simple set.
         :param simple_set_set: The C++ set of simple set
         """
-        raise NotImplementedError
+        cdef set[AbstractSimpleSet] py_simple_sets = set[AbstractSimpleSet]()
+        for simple_set in simple_set_set.get()[0]:
+            sio = self.from_cpp_si(simple_set)
+            py_simple_sets.add(sio)
+        return py_simple_sets
 
     cpdef AbstractSimpleSet intersection_with(self, AbstractSimpleSet other):
         """
@@ -117,7 +121,7 @@ cdef class AbstractSimpleSet:
         """
         raise NotImplementedError
 
-    def to_json(self):
+    cpdef to_json(self):
         return self.json_serializer.to_json()
 
 
@@ -362,7 +366,7 @@ cdef class AbstractCompositeSet:
                 return a < b
         return len(self.simple_sets) < len(other.simple_sets)
 
-    def to_json(self):
+    cpdef to_json(self):
         return self.json_serializer.to_json()
 
 

@@ -48,9 +48,6 @@ cdef class SimpleInterval(AbstractSimpleSet):
         self.cpp_object = self.cpp_simple_interval_object
         self.json_serializer = SimpleIntervalJSON(self)
 
-    cdef const CPPAbstractSimpleSetPtr_t as_cpp_simple_set(self):
-        return shared_ptr[CPPAbstractSimpleSet](self.cpp_object)
-
     def __hash__(self):
         return hash((self.lower, self.upper, self.left, self.right))
 
@@ -91,12 +88,12 @@ cdef class SimpleInterval(AbstractSimpleSet):
         else:
             raise ValueError("Invalid CPPSimpleInterval pointer.")
 
-    cdef set[SimpleInterval] from_cpp_simple_set_set(self, SimpleSetSetPtr_t simple_set_set):
-        cdef set[SimpleInterval] py_simple_sets = set[SimpleInterval]()
-        for simple_set in simple_set_set.get()[0]:
-            sio = self.from_cpp_si(simple_set)
-            py_simple_sets.add(sio)
-        return py_simple_sets
+    # cdef set[SimpleInterval] from_cpp_simple_set_set(self, SimpleSetSetPtr_t simple_set_set):
+    #     cdef set[SimpleInterval] py_simple_sets = set[SimpleInterval]()
+    #     for simple_set in simple_set_set.get()[0]:
+    #         sio = self.from_cpp_si(simple_set)
+    #         py_simple_sets.add(sio)
+    #     return py_simple_sets
 
     cpdef AbstractSimpleSet intersection_with(self, AbstractSimpleSet other):
         return self.from_cpp_si(self.cpp_object.intersection_with(shared_ptr[CPPAbstractSimpleSet](other.cpp_object)))
@@ -118,7 +115,7 @@ cdef class SimpleInterval(AbstractSimpleSet):
         """
         return ((self.cpp_simple_interval_object.lower + self.cpp_simple_interval_object.upper) / 2) + self.cpp_simple_interval_object.lower
 
-    def to_json(self):
+    cpdef to_json(self):
         return self.json_serializer.to_json()
 
 
@@ -188,9 +185,10 @@ cdef class Interval(AbstractCompositeSet):
         """
         :return: True if the interval is a singleton (contains only one value), False otherwise.
         """
-        return self.cpp_interval_object.is_singleton()
+        interval = <CPPInterval*> self.cpp_object
+        return interval.is_singleton()
 
-    def to_json(self):
+    cpdef to_json(self):
         return self.json_serializer.to_json()
 
 

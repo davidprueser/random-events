@@ -1,25 +1,29 @@
 import unittest
 
 from random_events.variable import *
-from random_events.interval_old import *
+from random_events.interval import *
+from random_events.set import *
 
 
-class TestEnum(SetElement):
-    EMPTY_SET = 0
-    A = 1
-    B = 2
-    C = 4
+# class TestEnum(SetElement):
+#     EMPTY_SET = 0
+#     A = 1
+#     B = 2
+#     C = 4
+
+int_set = 1, 2, 4
 
 
 class ContinuousTestCase(unittest.TestCase):
     x = Continuous("x")
 
+    # domain type wrong due to SetElement creation
     def test_creation(self):
         self.assertEqual(self.x.name, "x")
         self.assertEqual(self.x.domain, reals())
 
     def test_to_json(self):
-        x_ = Variable.from_json(self.x.to_json())
+        x_ = VariableJSON.from_json(self.x.to_json())
         self.assertEqual(self.x, x_)
 
 
@@ -34,13 +38,16 @@ class IntegerTestCase(unittest.TestCase):
 class SymbolicTestCase(unittest.TestCase):
 
     def test_creation(self):
-        x = Symbolic("x", TestEnum)
+        a = SetElement(1, int_set)
+        b = SetElement(2, int_set)
+        c = SetElement(4, int_set)
+        x = Symbolic("x", SortedSet(int_set))
         self.assertEqual(x.name, "x")
-        self.assertEqual(x.domain, Set(TestEnum.A, TestEnum.B, TestEnum.C))
+        self.assertEqual(x.domain, Set(a, b, c))
 
     def test_to_json(self):
-        x = Symbolic("x", TestEnum)
-        x_ = Variable.from_json(x.to_json())
+        x = Symbolic("x", SortedSet(int_set))
+        x_ = VariableJSON.from_json(x.to_json())
         self.assertEqual(x, x_)
 
 

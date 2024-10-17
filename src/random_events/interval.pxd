@@ -38,10 +38,10 @@ cdef class SimpleInterval(AbstractSimpleSet):
 
     cpdef float center(self) except *
 
+    cpdef to_json(self)
+
 
 cdef class Interval(AbstractCompositeSet):
-    cdef CPPInterval *cpp_interval_object
-
     cdef AbstractSimpleSet from_cpp_si(self, CPPAbstractSimpleSetPtr_t simple_set)
 
     cdef const CPPAbstractCompositeSetPtr_t as_cpp_composite_set(self)
@@ -57,3 +57,5 @@ cdef class Interval(AbstractCompositeSet):
     cpdef Interval complement_if_empty(self)
 
     cpdef bint is_singleton(self)
+
+    cpdef to_json(self)

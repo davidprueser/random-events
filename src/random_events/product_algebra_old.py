@@ -5,8 +5,8 @@ from typing_extensions import List, TYPE_CHECKING
 import plotly.graph_objects as go
 
 from .sigma_algebra_old import *
-from .variable import *
-from .variable import Variable
+from .variable_old import *
+from .variable_old import Variable
 
 
 # Type definitions

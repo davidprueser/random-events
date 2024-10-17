@@ -4,7 +4,7 @@ from libcpp.set cimport set as cppset
 from libcpp.memory cimport shared_ptr
 from libc.stdio cimport printf
 from libcpp.utility cimport pair
-
+from typing_extensions import Dict, Any
 
 cdef class AbstractSimpleSet:
     cdef CPPAbstractSimpleSet *cpp_object
@@ -33,6 +33,8 @@ cdef class AbstractSimpleSet:
     cpdef str to_string(self)
 
     cpdef AbstractCompositeSet as_composite_set(self)
+
+    cpdef to_json(self)
 
 
 cdef class AbstractCompositeSet:
@@ -80,3 +82,5 @@ cdef class AbstractCompositeSet:
     # cdef tuple[AbstractCompositeSet, AbstractCompositeSet] split_into_disjoint_and_non_disjoint(self)
 
     cpdef AbstractCompositeSet make_disjoint(self)
+
+    cpdef to_json(self)

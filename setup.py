@@ -21,6 +21,15 @@ interval_sources = [
 
 set_sources = [
     os.path.join(src_dir, 'set.pyx'),                # Cython file
+    os.path.join(src_dir, 'set_cpp.cpp'),            # C++ source file
+]
+
+variable_sources = [
+    os.path.join(src_dir, 'variable.pyx'),           # Cython file
+]
+
+product_algebra_sources = [
+    os.path.join(src_dir, 'product_algebra.pyx'),    # Cython file
 ]
 
 # Define the extensions with their dependencies
@@ -44,7 +53,21 @@ extensions = [
         sources=set_sources,
         language='c++',
         include_dirs=[src_dir],  # Same here for headers
+        extra_objects=[os.path.join(root_dir, 'build', 'lib.linux-x86_64-cpython-39', 'random_events',
+                                    'sigma_algebra.cpython-39-x86_64-linux-gnu.so')],  # Ensure sigma_algebra is built first
     ),
+    # Extension(
+    #     name="random_events.variable",
+    #     sources=variable_sources,
+    #     language='c++',
+    #     include_dirs=[src_dir],  # Same here for headers
+    # ),
+    # Extension(
+    #     name="random_events.product_algebra",
+    #     sources=product_algebra_sources,
+    #     language='c++',
+    #     include_dirs=[src_dir],  # Same here for headers
+    # )
 ]
 
 # Build the extensions
