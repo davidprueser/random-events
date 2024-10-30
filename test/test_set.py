@@ -2,7 +2,7 @@ import unittest
 
 from sortedcontainers import SortedSet
 
-from random_events.set import SetElement, Set
+from random_events.set import SetElement, Set, EMPTY_SET
 from random_events.sigma_algebra import AbstractSimpleSetJSON, EMPTY_SET_SYMBOL
 
 # class TestEnum(SetElement):
@@ -11,44 +11,47 @@ from random_events.sigma_algebra import AbstractSimpleSetJSON, EMPTY_SET_SYMBOL
 #     B = 2
 #     C = 4
 
-int_set: set[str] = {'-1', 'a', 'b', 'c'}
+str_set = {'a', 'c', 'b'}
+int_set = {1, 3, 2}
 
 
 class SetElementTestCase(unittest.TestCase):
 
     def test_intersection_with(self):
-        a = SetElement('a', int_set)
-        b = SetElement('b', int_set)
-        empty_set = SetElement('-1', set())
+        a = SetElement('a', str_set)
+        b = SetElement('b', str_set)
 
         intersection_a_b = a.intersection_with(b)
-        self.assertEqual(intersection_a_b, a.EMPTY_SET)
+        self.assertEqual(intersection_a_b, EMPTY_SET)
         self.assertEqual(a.intersection_with(a), a)
-        self.assertEqual(empty_set.intersection_with(a), empty_set)
 
     def test_complement(self):
-        a = SetElement('a', int_set)
-        b = SetElement('b', int_set)
-        c = SetElement('c', int_set)
-        complement = a.complement()
-        self.assertEqual(complement, SortedSet((b.element, c.element)))
-
-    def test_is_empty(self):
-        empty = SetElement('-1', int_set)
-        b = SetElement('b', int_set)
-        self.assertTrue(empty.is_empty())
-        self.assertFalse(b.is_empty())
+        a = SetElement('a', str_set)
+        b = SetElement('b', str_set)
+        c = SetElement('c', str_set)
+        a1 = SetElement(1, int_set)
+        complement_a = a.complement()
+        complement_b = b.complement()
+        complement_c = c.complement()
+        complement_a1 = a1.complement()
+        self.assertEqual(complement_a, {b, c})
+        self.assertEqual(complement_b, {a, c})
+        self.assertEqual(complement_c, {a, b})
+        print(complement_c)
+        print(complement_a1)
+        # why doesnt this work?
+        self.assertEqual(complement_a1, SortedSet([2, 3]))
 
     def test_contains(self):
-        a = SetElement('a', int_set)
-        b = SetElement('b', int_set)
-        c = SetElement('c', int_set)
+        a = SetElement('a', str_set)
+        b = SetElement('b', str_set)
+        c = SetElement('c', str_set)
         self.assertTrue(a.contains(a))
         self.assertFalse(a.contains(b))
         self.assertFalse(a.contains(c))
 
     def test_to_json(self):
-        a = SetElement('a', int_set)
+        a = SetElement('a', str_set)
         b = AbstractSimpleSetJSON.from_json(a.to_json())
         self.assertEqual(a, b)
 
@@ -56,33 +59,32 @@ class SetElementTestCase(unittest.TestCase):
 class SetTestCase(unittest.TestCase):
 
     def test_simplify(self):
-        a = SetElement('a', int_set)
+        a = SetElement('a', str_set)
         print(a)
-        b = SetElement('b', int_set)
-        c = SetElement('c', int_set)
+        b = SetElement('b', str_set)
+        c = SetElement('c', str_set)
         s = Set(a, b, c, c)
-        self.assertEqual(4, len(s.simple_sets))
+        self.assertEqual(3, len(s.simple_sets))
         ss = Set(a, b, c)
         self.assertEqual(ss, s.simplify())
 
-    # inheritance from AbstractCompositeSet doesn't work with this type of SetElement declaration
     def test_difference(self):
-        a = SetElement('a', int_set)
-        b = SetElement('b', int_set)
+        a = SetElement('a', str_set)
+        b = SetElement('b', str_set)
         s = Set(a, b)
         s_ = Set(a)
         self.assertEqual(s.difference_with(s_), Set(b))
 
     def test_complement(self):
-        a = SetElement('a', int_set)
-        b = SetElement('b', int_set)
-        c = SetElement('c', int_set)
+        a = SetElement('a', str_set)
+        b = SetElement('b', str_set)
+        c = SetElement('c', str_set)
         s = Set(a, b)
         self.assertEqual(s.complement(), Set(c))
 
     def test_to_json(self):
-        a = SetElement('a', int_set)
-        b = SetElement('b', int_set)
+        a = SetElement('a', str_set)
+        b = SetElement('b', str_set)
         s = Set(a, b)
         s_ = AbstractSimpleSetJSON.from_json(s.to_json())
         self.assertEqual(s, s_)

@@ -18,37 +18,23 @@ cdef class AbstractSimpleSet:
     def __init__(self):
         self.json_serializer = AbstractSimpleSetJSON(self)
 
-    cdef const CPPAbstractSimpleSetPtr_t as_cpp_simple_set(self):
-        """
-        Convert this simple set to a C++ simple set.
-        :return: The C++ simple set
-        """
-        return shared_ptr[CPPAbstractSimpleSet](self.cpp_object)
-
-    cdef const SimpleSetSetPtr_t as_cpp_simple_set_set(self):
-        """
-        Convert this simple set to a C++ set of simple sets.
-        :return: The C++ set of simple sets
-        """
-        raise NotImplementedError
-
-    cdef AbstractSimpleSet from_cpp_si(self, CPPAbstractSimpleSetPtr_t simple_set):
+    cdef AbstractSimpleSet from_cpp_simple_set(self, CPPAbstractSimpleSetPtr_t simple_set):
         """
         Convert a C++ simple set to a Python simple set.
         :param simple_set: The C++ simple set
         """
         raise NotImplementedError
 
-    cdef set[AbstractSimpleSet] from_cpp_simple_set_set(self, SimpleSetSetPtr_t simple_set_set):
+    cdef from_cpp_simple_set_set(self, SimpleSetSetPtr_t simple_set_set):
         """
         Convert a C++ simple set to a Python simple set.
         :param simple_set_set: The C++ set of simple set
         """
         cdef set[AbstractSimpleSet] py_simple_sets = set[AbstractSimpleSet]()
         for simple_set in simple_set_set.get()[0]:
-            sio = self.from_cpp_si(simple_set)
+            sio = self.from_cpp_simple_set(simple_set)
             py_simple_sets.add(sio)
-        return py_simple_sets
+        return SortedSet(py_simple_sets)
 
     cpdef AbstractSimpleSet intersection_with(self, AbstractSimpleSet other):
         """
@@ -57,7 +43,7 @@ cdef class AbstractSimpleSet:
         :param other: The other SimpleSet
         :return: The intersection of this set with the other set
         """
-        raise NotImplementedError
+        return self.from_cpp_simple_set(self.cpp_object.intersection_with(shared_ptr[CPPAbstractSimpleSet](other.cpp_object)))
 
     cpdef complement(self):
         """
@@ -95,7 +81,7 @@ cdef class AbstractSimpleSet:
         :param other: The other SimpleSet
         :return: The difference as disjoint set of simple sets.
         """
-        return self.from_cpp_simple_set_set(self.cpp_object.difference_with(other.as_cpp_simple_set()))
+        return self.from_cpp_simple_set_set(self.cpp_object.difference_with(shared_ptr[CPPAbstractSimpleSet](other.cpp_object)))
 
     cpdef str to_string(self):
         """
@@ -143,6 +129,13 @@ cdef class AbstractCompositeSet:
         self.simple_sets = SortedSet(simple_sets)
         self.json_serializer = AbstractCompositeSetJSON(self)
 
+    cdef AbstractSimpleSet from_cpp_simple_set(self, CPPAbstractSimpleSetPtr_t simple_set):
+        """
+        Convert a C++ simple set to a Python simple set.
+        :param simple_set: The C++ simple set
+        """
+        raise NotImplementedError
+
     cdef const CPPAbstractCompositeSetPtr_t as_cpp_composite_set(self):
         """
         Convert this composite set to a C++ composite set.
@@ -157,12 +150,17 @@ cdef class AbstractCompositeSet:
         """
         raise NotImplementedError
 
-    cdef from_cpp_composite_set_set(self, SimpleSetSetPtr_t composite_set_set):
+    cdef from_cpp_composite_set_set(self, SimpleSetSetPtr_t composite_set):
         """
         Convert a C++ composite set to a Python composite set.
-        :param composite_set_set: The C++ set of composite set
+        :param composite_set: The C++ set of composite set
         """
-        raise NotImplementedError
+        cdef list py_simple_sets = []  # Initialize an empty list
+        for simple_set in composite_set.get()[0]:  # Iterate over the simple sets
+            sio = self.from_cpp_simple_set(simple_set)  # Convert C++ simple set to Python simple set
+            py_simple_sets.append(sio)  # Append to the list
+        return py_simple_sets  # Return the list of SimpleInt
+
 
     cpdef AbstractCompositeSet simplify(self):
         """
@@ -202,7 +200,7 @@ cdef class AbstractCompositeSet:
         :param other: The simple set
         :return: The intersection of this set with the simple set
         """
-        return self.from_cpp_composite_set(self.cpp_object.intersection_with(other.as_cpp_simple_set()))
+        return self.from_cpp_composite_set(self.cpp_object.intersection_with(shared_ptr[CPPAbstractSimpleSet](other.cpp_object)))
 
     cpdef AbstractCompositeSet intersection_with_simple_sets(self, set_of_simple_sets):
         """
@@ -230,7 +228,7 @@ cdef class AbstractCompositeSet:
         :param other: The other set
         :return: The difference of this set with the other set
         """
-        return self.from_cpp_composite_set(self.cpp_object.difference_with(other.as_cpp_simple_set()))
+        return self.from_cpp_composite_set(self.cpp_object.difference_with(shared_ptr[CPPAbstractSimpleSet](other.cpp_object)))
 
     cpdef AbstractCompositeSet difference_with_simple_sets(self, other):
         """

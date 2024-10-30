@@ -10,15 +10,9 @@ class CPPSet;
 
 
 // TYPEDEFS
-typedef std::set<std::string> CPPAllSetElements_t;
+typedef std::set<int> CPPAllSetElements_t;
 using CPPAllSetElementsPtr_t = std::shared_ptr<CPPAllSetElements_t>;
 using CPPSetElementPtr_t = std::shared_ptr<CPPSetElement>;
-
-template<typename... Args>
-CPPAllSetElementsPtr_t make_shared_all_elements(Args &&... args) {
-    return std::make_shared<std::set<std::string>>(std::forward<Args>(args)...);
-}
-
 
 template<typename... Args>
 CPPSetElementPtr_t make_shared_set_element(Args &&... args) {
@@ -39,20 +33,18 @@ public:
     /**
      * The element to be chose from the all_elements set
      */
-    std::string element;
+    int element_index;
 
     /**
      * The set of all possible strings
      */
-    CPPAllSetElementsPtr_t all_elements;
+    int all_elements_length;
 
 
 
-    explicit CPPSetElement(const CPPAllSetElementsPtr_t &all_elements_);
+    explicit CPPSetElement(const int all_elements_index);
 
-    CPPSetElement(std::string element_, CPPAllSetElementsPtr_t &all_elements_);
-
-    CPPSetElement(const std::string &element_, CPPAllSetElementsPtr_t &all_elements_);
+    CPPSetElement(int element_index, int all_elements_index);
 
     ~CPPSetElement() override;
 
@@ -107,11 +99,18 @@ public:
 class CPPSet : public CPPAbstractCompositeSet {
 public:
 
-    CPPAllSetElementsPtr_t all_elements;
+    int all_elements_length;
 
-    explicit CPPSet(const CPPAllSetElementsPtr_t& all_elements_);
-    CPPSet(const CPPSetElementPtr_t& element_, const CPPAllSetElementsPtr_t& all_elements_);
-    CPPSet(const SimpleSetSetPtr_t& elements, const CPPAllSetElementsPtr_t& all_elements_);
+    CPPSet(){
+        this->simple_sets = make_shared_simple_set_set();
+    }
+
+    explicit CPPSet(const int all_elements_length);
+
+    CPPSet(const CPPSetElementPtr_t& element_, const int all_elements_length);
+
+    CPPSet(const SimpleSetSetPtr_t& elements, const int all_elements_length);
+
     ~CPPSet() override;
 
     CPPAbstractCompositeSetPtr_t simplify() override;

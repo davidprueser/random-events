@@ -10,13 +10,9 @@ cdef class AbstractSimpleSet:
     cdef CPPAbstractSimpleSet *cpp_object
     cdef public json_serializer
 
-    cdef const CPPAbstractSimpleSetPtr_t as_cpp_simple_set(self)
+    cdef AbstractSimpleSet from_cpp_simple_set(self, CPPAbstractSimpleSetPtr_t simple_set)
 
-    cdef const SimpleSetSetPtr_t as_cpp_simple_set_set(self)
-
-    cdef AbstractSimpleSet from_cpp_si(self, CPPAbstractSimpleSetPtr_t simple_set)
-
-    cdef set[AbstractSimpleSet] from_cpp_simple_set_set(self, SimpleSetSetPtr_t simple_set_set)
+    cdef from_cpp_simple_set_set(self, SimpleSetSetPtr_t simple_set_set)
 
     cpdef AbstractSimpleSet intersection_with(self, AbstractSimpleSet other)
 
@@ -41,6 +37,8 @@ cdef class AbstractCompositeSet:
     cdef CPPAbstractCompositeSet *cpp_object
     cdef public json_serializer
     cdef public simple_sets
+
+    cdef AbstractSimpleSet from_cpp_simple_set(self, CPPAbstractSimpleSetPtr_t simple_set)
 
     cdef const CPPAbstractCompositeSetPtr_t as_cpp_composite_set(self)
 

@@ -16,19 +16,11 @@ cdef class SimpleInterval(AbstractSimpleSet):
     cdef public int left
     cdef public int right
 
-    cdef const CPPAbstractSimpleSetPtr_t as_cpp_simple_set(self)
-
-    cdef const SimpleSetSetPtr_t as_cpp_simple_set_set(self)
-
     cpdef bint is_empty(self) except *
 
     cpdef bint is_singleton(self)
 
-    cdef AbstractSimpleSet from_cpp_si(self, CPPAbstractSimpleSetPtr_t simple_set)
-
-    cdef set[SimpleInterval] from_cpp_simple_set_set(self, SimpleSetSetPtr_t simple_set_set)
-
-    cpdef AbstractSimpleSet intersection_with(self, AbstractSimpleSet other)
+    cdef AbstractSimpleSet from_cpp_simple_set(self, CPPAbstractSimpleSetPtr_t simple_set)
 
     cpdef complement(self)
 
@@ -42,13 +34,11 @@ cdef class SimpleInterval(AbstractSimpleSet):
 
 
 cdef class Interval(AbstractCompositeSet):
-    cdef AbstractSimpleSet from_cpp_si(self, CPPAbstractSimpleSetPtr_t simple_set)
+    cdef AbstractSimpleSet from_cpp_simple_set(self, CPPAbstractSimpleSetPtr_t simple_set)
 
     cdef const CPPAbstractCompositeSetPtr_t as_cpp_composite_set(self)
 
     cdef AbstractCompositeSet from_cpp_composite_set(self, CPPAbstractCompositeSetPtr_t composite_set)
-
-    cdef from_cpp_composite_set_set(self, SimpleSetSetPtr_t si)
 
     cpdef AbstractCompositeSet simplify(self)
 

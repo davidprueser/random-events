@@ -58,7 +58,6 @@ class IntervalTestCase(unittest.TestCase):
         c = SimpleInterval(1.5, 2, Bound.CLOSED)
         d = SimpleInterval(3, 4)
         a_b = Interval(d, a, b, c)
-        print(a_b)
         a_b_simplified = a_b.simplify()
         a_b_simplified_ = Interval(SimpleInterval(0, 2), SimpleInterval(3, 4))
         self.assertEqual(a_b_simplified_, a_b_simplified)

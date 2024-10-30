@@ -65,6 +65,17 @@ cdef class SimpleInterval(AbstractSimpleSet):
     def __str__(self):
         return AbstractSimpleSet.to_string(self)
 
+    cdef AbstractSimpleSet from_cpp_simple_set(self, CPPAbstractSimpleSetPtr_t simple_set):
+        # Cast the CPPAbstractSimpleSet pointer to CPPSimpleInterval pointer
+        cdef CPPSimpleInterval * cpp_interval = <CPPSimpleInterval *> simple_set.get()
+
+        # Make sure that cpp_interval is not NULL (i.e., ensure the cast was valid)
+        if cpp_interval is not NULL:
+            # Create and return a new SimpleInterval Python object
+            return SimpleInterval(cpp_interval.lower, cpp_interval.upper, cpp_interval.left, cpp_interval.right)
+        else:
+            raise ValueError("Invalid CPPSimpleInterval pointer.")
+
     cpdef Interval as_composite_set(self):
         return Interval(self)
 
@@ -76,27 +87,6 @@ cdef class SimpleInterval(AbstractSimpleSet):
         :return: True if the interval is a singleton (contains only one value), False otherwise.
         """
         return self.cpp_simple_interval_object.is_singleton()
-
-    cdef AbstractSimpleSet from_cpp_si(self, CPPAbstractSimpleSetPtr_t simple_set):
-        # Cast the CPPAbstractSimpleSet pointer to CPPSimpleInterval pointer
-        cdef CPPSimpleInterval * cpp_interval = <CPPSimpleInterval *> simple_set.get()
-
-        # Make sure that cpp_interval is not NULL (i.e., ensure the cast was valid)
-        if cpp_interval is not NULL:
-            # Create and return a new SimpleInterval Python object
-            return SimpleInterval(cpp_interval.lower, cpp_interval.upper, cpp_interval.left, cpp_interval.right)
-        else:
-            raise ValueError("Invalid CPPSimpleInterval pointer.")
-
-    # cdef set[SimpleInterval] from_cpp_simple_set_set(self, SimpleSetSetPtr_t simple_set_set):
-    #     cdef set[SimpleInterval] py_simple_sets = set[SimpleInterval]()
-    #     for simple_set in simple_set_set.get()[0]:
-    #         sio = self.from_cpp_si(simple_set)
-    #         py_simple_sets.add(sio)
-    #     return py_simple_sets
-
-    cpdef AbstractSimpleSet intersection_with(self, AbstractSimpleSet other):
-        return self.from_cpp_si(self.cpp_object.intersection_with(shared_ptr[CPPAbstractSimpleSet](other.cpp_object)))
 
     cpdef complement(self):
         return self.from_cpp_simple_set_set(self.cpp_object.complement())
@@ -143,34 +133,16 @@ cdef class Interval(AbstractCompositeSet):
 
         cdef SimpleInterval simple_set
         for simple_set in self.simple_sets:
-            self.cpp_object.simple_sets.get().insert(simple_set.as_cpp_simple_set())
+            self.cpp_object.simple_sets.get().insert(shared_ptr[CPPAbstractSimpleSet](simple_set.cpp_object))
 
-    cdef AbstractSimpleSet from_cpp_si(self, CPPAbstractSimpleSetPtr_t simple_set):
-        # Cast the CPPAbstractSimpleSet pointer to CPPSimpleInterval pointer
+    cdef AbstractSimpleSet from_cpp_simple_set(self, CPPAbstractSimpleSetPtr_t simple_set):
         cdef CPPSimpleInterval * cpp_interval = <CPPSimpleInterval *> simple_set.get()
-
-        # Make sure that cpp_interval is not NULL (i.e., ensure the cast was valid)
-        if cpp_interval is not NULL:
-            # Create and return a new SimpleInterval Python object
-            return SimpleInterval(cpp_interval.lower, cpp_interval.upper, cpp_interval.left, cpp_interval.right)
-        else:
-            raise ValueError("Invalid CPPSimpleInterval pointer.")
+        return SimpleInterval(cpp_interval.lower, cpp_interval.upper, cpp_interval.left, cpp_interval.right)
 
     cdef AbstractCompositeSet from_cpp_composite_set(self, CPPAbstractCompositeSetPtr_t composite_set):
         cdef CPPInterval * cpp_interval = <CPPInterval *> composite_set.get()
-
-        if cpp_interval is not NULL:
-            simple_intervals = self.from_cpp_composite_set_set(cpp_interval.simple_sets)
-            return Interval(*simple_intervals)
-        else:
-            raise ValueError("Invalid CPPInterval pointer.")
-
-    cdef from_cpp_composite_set_set(self, SimpleSetSetPtr_t composite_set):
-        cdef list py_simple_sets = []  # Initialize an empty list
-        for simple_set in composite_set.get()[0]:  # Iterate over the simple sets
-            sio = self.from_cpp_si(simple_set)  # Convert C++ SimpleSet to Python SimpleInterval
-            py_simple_sets.append(sio)  # Append to the list
-        return py_simple_sets  # Return the list of SimpleInt
+        simple_intervals = self.from_cpp_composite_set_set(cpp_interval.simple_sets)
+        return Interval(*simple_intervals)
 
     cpdef AbstractCompositeSet simplify(self):
         return self.from_cpp_composite_set(self.cpp_object.simplify())

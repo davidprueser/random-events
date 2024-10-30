@@ -1,69 +1,44 @@
 #include "set_cpp.h"
 #include <stdexcept>
 
-CPPSetElement::CPPSetElement(std::string element_, CPPAllSetElementsPtr_t &all_elements_) {
+CPPSetElement::CPPSetElement(int element_index, int all_elements_length) {
+    this->element_index = element_index;
+    this->all_elements_length = all_elements_length;
 
-    this->element = element_;
-    this->all_elements = all_elements_;
-
-//    if (element == '-1') {
-//        throw std::invalid_argument("element must be non-negative");
-//    }
-
-//    if (element != all_elements->size()) {
-//        throw std::invalid_argument("element_index must be less than the number of elements in the all_elements set");
-//    }
-}
-
-CPPSetElement::CPPSetElement(const std::string &element_, CPPAllSetElementsPtr_t &all_elements_) {
-    this->all_elements = all_elements_;
-
-    if (element_.empty()) {
-        throw std::invalid_argument("element must not be empty");
+    if(element_index >= all_elements_length) {
+        throw std::invalid_argument("element_index must be less than the number of elements in the all_elements set");
     }
-
-    auto it = std::find(all_elements->begin(), all_elements->end(), element_);
-    if (it == all_elements->end()) {
-        throw std::invalid_argument("element must be in the all_elements set");
-    }
-
-    this->element = std::distance(all_elements->begin(), it);
-
 }
 
 CPPSetElement::~CPPSetElement() = default;
 
 CPPAbstractSimpleSetPtr_t CPPSetElement::intersection_with(const CPPAbstractSimpleSetPtr_t &other) {
     const auto derived_other = (CPPSetElement *) other.get();
-    auto result = make_shared_set_element(all_elements);
-    if (this->element == derived_other->element) {
-        result->element = this->element;
+    auto result = make_shared_set_element(all_elements_length);
+    if (this->element_index == derived_other->element_index) {
+        result->element_index = this->element_index;
     }
     return result;
 }
 
 SimpleSetSetPtr_t CPPSetElement::complement() {
-    return make_shared_simple_set_set();
-}
+    auto result = make_shared_simple_set_set();
+    for (int i = 0; i < all_elements_length; i++) {
+        if (i == element_index) {
+            continue;
+        }
+        result->insert(make_shared_set_element(i, all_elements_length));
+    }
 
-//SimpleSetSetPtr_t CPPSetElement::complement() {
-//    auto result = make_shared_simple_set_set();
-//    for (int i = 0; i < all_elements->size(); i++) {
-//        if (i == element) {
-//            continue;
-//        }
-//        result->insert(make_shared_set_element(i, all_elements));
-//    }
-//
-//    return result;
-//}
+    return result;
+}
 
 bool CPPSetElement::contains(const ElementaryVariant *element) {
     return false;
 }
 
 bool CPPSetElement::is_empty() {
-    return this->element == "-1";
+    return this->element_index == -1;
 }
 
 bool CPPSetElement::operator==(const CPPAbstractSimpleSet &other) {
@@ -72,7 +47,7 @@ bool CPPSetElement::operator==(const CPPAbstractSimpleSet &other) {
 }
 
 bool CPPSetElement::operator==(const CPPSetElement &other) {
-    return element == other.element;
+    return element_index == other.element_index;
 }
 
 bool CPPSetElement::operator<(const CPPAbstractSimpleSet &other) {
@@ -81,7 +56,7 @@ bool CPPSetElement::operator<(const CPPAbstractSimpleSet &other) {
 }
 
 bool CPPSetElement::operator<(const CPPSetElement &other) {
-    return element < other.element;
+    return element_index < other.element_index;
 }
 
 bool CPPSetElement::operator<=(const CPPAbstractSimpleSet &other) {
@@ -90,37 +65,37 @@ bool CPPSetElement::operator<=(const CPPAbstractSimpleSet &other) {
 }
 
 bool CPPSetElement::operator<=(const CPPSetElement &other) {
-    return element <= other.element;
+    return element_index <= other.element_index;
 }
 
 std::string *CPPSetElement::non_empty_to_string() {
-    return new std::string(element);
+    return new std::string(std::to_string(element_index));
 }
 
-CPPSetElement::CPPSetElement(const CPPAllSetElementsPtr_t &all_elements_) {
-    this->all_elements = all_elements_;
-    this->element = -1;
+CPPSetElement::CPPSetElement(const int all_elements_length) {
+    this->all_elements_length = all_elements_length;
+    this->element_index = -1;
 }
 
-CPPSet::CPPSet(const CPPSetElementPtr_t &element_, const CPPAllSetElementsPtr_t &all_elements_) {
+CPPSet::CPPSet(const CPPSetElementPtr_t &element_, const int all_elements_length) {
     this->simple_sets = make_shared_simple_set_set();
     this->simple_sets->insert(element_);
-    this->all_elements = all_elements_;
+    this->all_elements_length = all_elements_length;
 }
 
-CPPSet::CPPSet(const CPPAllSetElementsPtr_t &all_elements_) {
+CPPSet::CPPSet(const int all_elements_length) {
     this->simple_sets = make_shared_simple_set_set();
-    this->all_elements = all_elements_;
+    this->all_elements_length = all_elements_length;
 }
 
-CPPSet::CPPSet(const SimpleSetSetPtr_t &elements_, const CPPAllSetElementsPtr_t &all_elements_) {
+CPPSet::CPPSet(const SimpleSetSetPtr_t &elements_, const int all_elements_length) {
     this->simple_sets = make_shared_simple_set_set();
     this->simple_sets->insert(elements_->begin(), elements_->end());
-    this->all_elements = all_elements_;
+    this->all_elements_length = all_elements_length;
 }
 
 CPPAbstractCompositeSetPtr_t CPPSet::make_new_empty() const {
-    return make_shared_set(all_elements);
+    return make_shared_set(all_elements_length);
 }
 
 CPPSet::~CPPSet() {
@@ -128,7 +103,7 @@ CPPSet::~CPPSet() {
 }
 
 CPPAbstractCompositeSetPtr_t CPPSet::simplify() {
-    return std::make_shared<CPPSet>(simple_sets, all_elements);
+    return std::make_shared<CPPSet>(simple_sets, all_elements_length);
 }
 
 std::string *CPPSet::to_string() {

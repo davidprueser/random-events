@@ -7,22 +7,20 @@ from libcpp cimport bool
 
 cdef extern from "set_cpp.h":
 
-    ctypedef set[string] CPPAllSetElements_t
+    ctypedef set[int] CPPAllSetElements_t
     ctypedef shared_ptr[CPPAllSetElements_t] CPPAllSetElementsPtr_t
     ctypedef shared_ptr[CPPSetElement] CPPSetElementPtr_t
 
     ctypedef shared_ptr[CPPSet] CPPSetPtr_t
 
     cdef cppclass CPPSetElement(CPPAbstractSimpleSet):
-        CPPAllSetElementsPtr_t all_elements;
-        string element;
+        int element_index;
+        int all_elements_length;
 
         CPPSetElement()
-        CPPSetElement(const CPPAllSetElementsPtr_t &all_elements_);
 
-        CPPSetElement(string element_, CPPAllSetElementsPtr_t &all_elements_);
+        CPPSetElement(int element_index, int all_elements_index);
 
-        CPPSetElement(const string &element_, CPPAllSetElementsPtr_t &all_elements_);
 
         CPPAbstractSimpleSetPtr_t intersection_with(const CPPAbstractSimpleSetPtr_t &other);
 
