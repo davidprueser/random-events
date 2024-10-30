@@ -5,13 +5,7 @@ from random_events.interval import *
 from random_events.set import *
 
 
-# class TestEnum(SetElement):
-#     EMPTY_SET = 0
-#     A = 1
-#     B = 2
-#     C = 4
-
-int_set = 1, 2, 4
+int_set = {1, 2, 4}
 
 
 class ContinuousTestCase(unittest.TestCase):
@@ -41,12 +35,15 @@ class SymbolicTestCase(unittest.TestCase):
         a = SetElement(1, int_set)
         b = SetElement(2, int_set)
         c = SetElement(4, int_set)
-        x = Symbolic("x", SortedSet(int_set))
+        x = Symbolic("x", Set(a, b, c))
         self.assertEqual(x.name, "x")
         self.assertEqual(x.domain, Set(a, b, c))
 
     def test_to_json(self):
-        x = Symbolic("x", SortedSet(int_set))
+        a = SetElement(1, int_set)
+        b = SetElement(2, int_set)
+        c = SetElement(4, int_set)
+        x = Symbolic("x", Set(a, b, c))
         x_ = VariableJSON.from_json(x.to_json())
         self.assertEqual(x, x_)
 

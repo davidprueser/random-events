@@ -5,5 +5,3 @@ cdef class Variable:
     cdef public str name
     cdef public AbstractCompositeSet domain
     cdef public json_serializer
-
-    cpdef to_json(self)
