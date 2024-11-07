@@ -1,3 +1,5 @@
+#pragma once
+
 #include "sigma_algebra_cpp.h"
 #include <set>
 #include <utility>

@@ -49,13 +49,13 @@ cdef class AbstractSimpleSet:
         """
         :return: The complement of this set as disjoint set of simple sets.
         """
-        raise NotImplementedError
+        return self.from_cpp_simple_set_set(self.cpp_object.complement())
 
     cpdef bint is_empty(self) except *:
         """
         :return: Rather this set is empty or not.
         """
-        raise NotImplementedError
+        return self.cpp_object.is_empty()
 
     cpdef bint contains(self, item) except *:
         """
@@ -68,7 +68,7 @@ cdef class AbstractSimpleSet:
     def __hash__(self):
         raise NotImplementedError
 
-    cdef str non_empty_to_string(self):
+    cpdef str non_empty_to_string(self):
         """
         :return: A string representation of this set if it is not empty.
         """
@@ -306,25 +306,6 @@ cdef class AbstractCompositeSet:
         :return: Rather if the simple sets are disjoint or not.
         """
         return self.cpp_object.is_disjoint()
-
-    # cdef tuple[AbstractCompositeSet, AbstractCompositeSet] split_into_disjoint_and_non_disjoint(self):
-    #     """
-    #     Split this composite set into disjoint and non-disjoint parts.
-    #
-    #     This method is required for making the composite set disjoint.
-    #     The partitioning is done by removing every other simple set from every simple set.
-    #     The purified simple sets are then disjoint by definition and the pairwise intersections are (potentially) not
-    #     disjoint yet.
-    #
-    #     This method requires:
-    #         - the intersection of two simple sets as a simple set
-    #         - the difference_of_a_with_every_b of a simple set (A) and another simple set (B) that is completely contained in A (B ⊆ A).
-    #         The result of that difference_of_a_with_every_b has to be a composite set with only one simple set in it.
-    #
-    #     :return: A tuple of the disjoint and non-disjoint set.
-    #     """
-    #     cdef pair[CPPAbstractCompositeSetPtr_t, CPPAbstractCompositeSetPtr_t] result = self.cpp_object.split_into_disjoint_and_non_disjoint()
-    #     return self.from_cpp_composite_set(result.first), self.from_cpp_composite_set(result.second)
 
     cpdef AbstractCompositeSet make_disjoint(self):
         """

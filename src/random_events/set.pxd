@@ -12,8 +12,6 @@ cdef class SetElement(AbstractSimpleSet):
 
     cdef AbstractSimpleSet from_cpp_simple_set(self, CPPAbstractSimpleSetPtr_t simple_set)
 
-    cpdef complement(self)
-
     cpdef bint contains(self, item)
 
     cpdef bint is_empty(self)

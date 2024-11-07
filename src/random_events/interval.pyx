@@ -68,28 +68,16 @@ cdef class SimpleInterval(AbstractSimpleSet):
     cdef AbstractSimpleSet from_cpp_simple_set(self, CPPAbstractSimpleSetPtr_t simple_set):
         # Cast the CPPAbstractSimpleSet pointer to CPPSimpleInterval pointer
         cdef CPPSimpleInterval * cpp_interval = <CPPSimpleInterval *> simple_set.get()
-
-        # Make sure that cpp_interval is not NULL (i.e., ensure the cast was valid)
-        if cpp_interval is not NULL:
-            # Create and return a new SimpleInterval Python object
-            return SimpleInterval(cpp_interval.lower, cpp_interval.upper, cpp_interval.left, cpp_interval.right)
-        else:
-            raise ValueError("Invalid CPPSimpleInterval pointer.")
+        return SimpleInterval(cpp_interval.lower, cpp_interval.upper, cpp_interval.left, cpp_interval.right)
 
     cpdef Interval as_composite_set(self):
         return Interval(self)
-
-    cpdef bint is_empty(self) except *:
-        return self.cpp_object.is_empty()
 
     cpdef bint is_singleton(self):
         """
         :return: True if the interval is a singleton (contains only one value), False otherwise.
         """
         return self.cpp_simple_interval_object.is_singleton()
-
-    cpdef complement(self):
-        return self.from_cpp_simple_set_set(self.cpp_object.complement())
 
     cpdef bint contains(self, item) except *:
         return self.cpp_simple_interval_object.contains(<float> item)

@@ -237,3 +237,12 @@ public:
     bool is_singleton() const;
     bool contains(float element) const;
 };
+
+inline CPPIntervalPtr_t reals() {
+    auto interval = CPPSimpleInterval::make_shared(-std::numeric_limits<float>::infinity(),
+                                                             std::numeric_limits<float>::infinity(),
+                                                             BorderType::OPEN, BorderType::OPEN);
+    auto intervals = make_shared_simple_set_set();
+    intervals->insert(interval);
+    return CPPInterval::make_shared(intervals);
+};

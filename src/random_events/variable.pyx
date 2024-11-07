@@ -1,9 +1,9 @@
-from typing_extensions import Self, Type, Dict, Any, Union
+# cython: c_string_type=unicode, c_string_encoding=UTF8
 
-from .interval cimport Interval
+from typing_extensions import Self, Type, Dict, Any, Union
 from .interval import reals
 from .set import SetElement, Set, EMPTY_SET
-from .sigma_algebra import AbstractCompositeSetJSON
+from .sigma_algebra import AbstractCompositeSetJSON, EMPTY_SET_SYMBOL
 from .utils import SubclassJSONSerializer
 
 
@@ -14,7 +14,7 @@ cdef class Variable:
         self.domain = domain
         self.json_serializer = VariableJSON(self)
 
-    def __lt__(self, other: Self) -> bool:
+    def __lt__(self, Variable other) -> bool:
         """
         Returns True if self < other, False otherwise.
         """
@@ -58,48 +58,56 @@ class VariableJSON(SubclassJSONSerializer):
         return Variable(data["name"], AbstractCompositeSetJSON.from_json(data["domain"]))
 
 
-class Continuous(Variable):
+cdef class Continuous(Variable):
     """
     Class for continuous random variables.
 
     The domain of a continuous variable is the real line.
     """
-    domain: Interval
 
-    def __init__(self, name: str, domain=None):
+    def __init__(self, str name, domain=None):
         super().__init__(name, reals())
+        cdef const char* cpp_name = name
+        self.cpp_continuous_object = new CPPContinuous(cpp_name)
+        self.cpp_object = self.cpp_continuous_object
 
 
-class Symbolic(Variable):
+cdef class Symbolic(Variable):
     """
     Class for unordered, finite, discrete random variables.
 
     The domain of a symbolic variable is a set of values from an enumeration.
     """
-    domain: Set
 
-    def __init__(self, name: str, domain: Union[Type[SetElement], SetElement]):
+    def __init__(self, str name, domain: Union[set, Set]):
         """
         Construct a symbolic variable.
         :param name: The name.
         :param domain: The class that lists all elements of the domain.
         """
-        if isinstance(domain, type) and issubclass(domain, SetElement):
-            super().__init__(name, Set(*[value for value in domain if value != EMPTY_SET]))
+        if isinstance(domain, set):
+            self.domain = Set(*[SetElement(value, domain) for value in domain if value != EMPTY_SET_SYMBOL])
         else:
-            super().__init__(name, domain)
+            self.domain = domain
+        super().__init__(name, self.domain)
+
+        cdef const char* cpp_name = name
+        self.cpp_symbolic_object = new CPPSymbolic(cpp_name, shared_ptr[CPPSet](<CPPSet*> self.domain.cpp_object))
+        self.cpp_object = self.cpp_symbolic_object
 
     def domain_type(self) -> Type[SetElement]:
         return self.domain.simple_sets[0].all_elements
 
 
-class Integer(Variable):
+cdef class Integer(Variable):
     """
     Class for ordered, discrete random variables.
 
     The domain of an integer variable is the number line.
     """
-    domain: Interval
 
-    def __init__(self, name: str, domain=None):
+    def __init__(self, str name, domain=None):
         super().__init__(name, reals())
+        cdef const char* cpp_name = name
+        self.cpp_integer_object = new CPPInteger(cpp_name)
+        self.cpp_object = self.cpp_integer_object

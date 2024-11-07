@@ -30,6 +30,8 @@ class SetElementTestCase(unittest.TestCase):
         b = SetElement('b', str_set)
         c = SetElement('c', str_set)
         a1 = SetElement(1, int_set)
+        a2 = SetElement(2, int_set)
+        a3 = SetElement(3, int_set)
         complement_a = a.complement()
         complement_b = b.complement()
         complement_c = c.complement()
@@ -37,10 +39,7 @@ class SetElementTestCase(unittest.TestCase):
         self.assertEqual(complement_a, {b, c})
         self.assertEqual(complement_b, {a, c})
         self.assertEqual(complement_c, {a, b})
-        print(complement_c)
-        print(complement_a1)
-        # why doesnt this work?
-        self.assertEqual(complement_a1, SortedSet([2, 3]))
+        self.assertEqual(complement_a1, {a2, a3})
 
     def test_contains(self):
         a = SetElement('a', str_set)
@@ -60,7 +59,6 @@ class SetTestCase(unittest.TestCase):
 
     def test_simplify(self):
         a = SetElement('a', str_set)
-        print(a)
         b = SetElement('b', str_set)
         c = SetElement('c', str_set)
         s = Set(a, b, c, c)

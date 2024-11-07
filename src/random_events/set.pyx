@@ -53,9 +53,6 @@ cdef class SetElement(AbstractSimpleSet):
             return SetElement(EMPTY_SET_SYMBOL, set())
         return SetElement(self.all_elements[cpp_set_element.element_index], self.all_elements)
 
-    cpdef complement(self):
-        return self.from_cpp_simple_set_set(self.cpp_object.complement())
-
     cpdef bint contains(self, item) except *:
         return self == item
 

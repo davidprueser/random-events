@@ -22,7 +22,7 @@ cdef class AbstractSimpleSet:
 
     cpdef bint contains(self, item) except *
 
-    cdef str non_empty_to_string(self)
+    cpdef str non_empty_to_string(self)
 
     cpdef difference_with(self, AbstractSimpleSet other)
 
