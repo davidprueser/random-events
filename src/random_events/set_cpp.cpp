@@ -1,11 +1,11 @@
 #include "set_cpp.h"
 #include <stdexcept>
 
-CPPSetElement::CPPSetElement(int element_index, int all_elements_length) {
+CPPSetElement::CPPSetElement(int element_index, const CPPAllSetElementsPtr_t &all_elements_length) {
     this->element_index = element_index;
     this->all_elements_length = all_elements_length;
 
-    if(element_index >= all_elements_length) {
+    if(element_index >= *all_elements_length) {
         throw std::invalid_argument("element_index must be less than the number of elements in the all_elements set");
     }
 }
@@ -23,7 +23,7 @@ CPPAbstractSimpleSetPtr_t CPPSetElement::intersection_with(const CPPAbstractSimp
 
 SimpleSetSetPtr_t CPPSetElement::complement() {
     auto result = make_shared_simple_set_set();
-    for (int i = 0; i < all_elements_length; i++) {
+    for (int i = 0; i < *all_elements_length; i++) {
         if (i == element_index) {
             continue;
         }
@@ -72,23 +72,23 @@ std::string *CPPSetElement::non_empty_to_string() {
     return new std::string(std::to_string(element_index));
 }
 
-CPPSetElement::CPPSetElement(const int all_elements_length) {
+CPPSetElement::CPPSetElement(const CPPAllSetElementsPtr_t &all_elements_length) {
     this->all_elements_length = all_elements_length;
     this->element_index = -1;
 }
 
-CPPSet::CPPSet(const CPPSetElementPtr_t &element_, const int all_elements_length) {
+CPPSet::CPPSet(const CPPSetElementPtr_t &element_, const CPPAllSetElementsPtr_t &all_elements_length) {
     this->simple_sets = make_shared_simple_set_set();
     this->simple_sets->insert(element_);
     this->all_elements_length = all_elements_length;
 }
 
-CPPSet::CPPSet(const int all_elements_length) {
+CPPSet::CPPSet(const CPPAllSetElementsPtr_t &all_elements_length) {
     this->simple_sets = make_shared_simple_set_set();
     this->all_elements_length = all_elements_length;
 }
 
-CPPSet::CPPSet(const SimpleSetSetPtr_t &elements_, const int all_elements_length) {
+CPPSet::CPPSet(const SimpleSetSetPtr_t &elements_, const CPPAllSetElementsPtr_t &all_elements_length) {
     this->simple_sets = make_shared_simple_set_set();
     this->simple_sets->insert(elements_->begin(), elements_->end());
     this->all_elements_length = all_elements_length;

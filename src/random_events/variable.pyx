@@ -1,9 +1,10 @@
 # cython: c_string_type=unicode, c_string_encoding=UTF8
+# distutils: language = c++
 
-from typing_extensions import Self, Type, Dict, Any, Union
+from typing_extensions import Type, Dict, Any, Union
 from .interval import reals
 from .set import SetElement, Set, EMPTY_SET
-from .sigma_algebra import AbstractCompositeSetJSON, EMPTY_SET_SYMBOL
+from .sigma_algebra import AbstractCompositeSetJSON, EMPTY_SET_SYMBOL, AbstractCompositeSet
 from .utils import SubclassJSONSerializer
 
 
@@ -38,6 +39,9 @@ cdef class Variable:
     def __repr__(self):
         return f"{self.__class__.__name__}({self.name})"
 
+    cdef from_cpp_variable(self, AbstractVariablePtr_t variable):
+        raise NotImplementedError()
+
     def to_json(self):
         return self.json_serializer.to_json()
 
@@ -71,6 +75,12 @@ cdef class Continuous(Variable):
         self.cpp_continuous_object = new CPPContinuous(cpp_name)
         self.cpp_object = self.cpp_continuous_object
 
+    cdef from_cpp_variable(self, AbstractVariablePtr_t variable):
+        cdef str name = variable.get().name.get()[0]
+        cdef Interval domain = Interval()
+        domain = domain.from_cpp_composite_set(variable.get().get_domain())
+        return Continuous(name, domain)
+
 
 cdef class Symbolic(Variable):
     """
@@ -98,6 +108,11 @@ cdef class Symbolic(Variable):
     def domain_type(self) -> Type[SetElement]:
         return self.domain.simple_sets[0].all_elements
 
+    cdef from_cpp_variable(self, AbstractVariablePtr_t variable):
+        cdef str name = variable.get().name.get()[0]
+        domain = self.domain.from_cpp_composite_set(variable.get().get_domain())
+        return Symbolic(name, domain)
+
 
 cdef class Integer(Variable):
     """
@@ -111,3 +126,10 @@ cdef class Integer(Variable):
         cdef const char* cpp_name = name
         self.cpp_integer_object = new CPPInteger(cpp_name)
         self.cpp_object = self.cpp_integer_object
+
+    cdef from_cpp_variable(self, AbstractVariablePtr_t variable):
+        cdef str name = variable.get().name.get()[0]
+        cdef Interval domain = Interval()
+        domain = domain.from_cpp_composite_set(variable.get().get_domain())
+        return Integer(name, domain)
+

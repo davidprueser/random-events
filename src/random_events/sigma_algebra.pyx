@@ -129,6 +129,9 @@ cdef class AbstractCompositeSet:
         self.simple_sets = SortedSet(simple_sets)
         self.json_serializer = AbstractCompositeSetJSON(self)
 
+    def __dealloc__(self):
+        del self.simple_sets
+
     cdef AbstractSimpleSet from_cpp_simple_set(self, CPPAbstractSimpleSetPtr_t simple_set):
         """
         Convert a C++ simple set to a Python simple set.

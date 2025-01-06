@@ -1,12 +1,27 @@
 #include "product_algebra_cpp.h"
+#include <iostream>
+
+
+SimpleEvent::~SimpleEvent() = default;
+
 
 CPPAbstractSimpleSetPtr_t SimpleEvent::intersection_with(const CPPAbstractSimpleSetPtr_t &other) {
+    std::cout << "intersection_with" << std::endl;
     const auto derived_other = (SimpleEvent *) other.get();
-    auto all_variables = merge_variables(derived_other->get_variables());
+    std::cout << "derived_other " <<  *derived_other->to_string() << std::endl;
+    auto x = derived_other->get_variables();
+    std::cout << "x" << std::endl;
 
+//    for (auto const &variable: *x) {
+//        std::cout << "variable" << *variable->name << std::endl;
+//    }
+    auto all_variables = merge_variables(x);
+    std::cout << "all_variables; merge succeeded" << std::endl;
     auto result = make_shared_simple_event(all_variables);
+    std::cout << "result" << *result->to_string() << std::endl;
+    auto final_result = make_shared_simple_event();
 
-    for (auto const &variable: all_variables) {
+    for (auto const &variable: *all_variables) {
 
         // default assignment is the domain of the variable
         auto assignment = result->variable_map->at(variable);
@@ -16,6 +31,7 @@ CPPAbstractSimpleSetPtr_t SimpleEvent::intersection_with(const CPPAbstractSimple
             // get and intersect assignments
             auto self_assignment = variable_map->at(variable);
             assignment = self_assignment->intersection_with(assignment);
+            std::cout << "intersection_with_self " << *assignment->to_string() << std::endl;
         }
 
         // if variable is in other
@@ -23,32 +39,37 @@ CPPAbstractSimpleSetPtr_t SimpleEvent::intersection_with(const CPPAbstractSimple
             // get and intersect assignments
             auto other_assignment = derived_other->variable_map->at(variable);
             assignment = other_assignment->intersection_with(assignment);
+            std::cout << "intersection_with_other " << *assignment->to_string() << std::endl;
         }
-        result->variable_map->insert({variable, assignment});
+        final_result->variable_map->insert({variable, assignment});
     }
-    return result;
+    return final_result;
 }
 
-VariableSet SimpleEvent::get_variables() const {
-    VariableSet variables;
+VariableSetPtr_t SimpleEvent::get_variables() const {
+    VariableSetPtr_t variables = make_shared_variable_set();
+    std::cout << "pimmel" << std::endl;
     for (auto const &pair: *variable_map) {
-        variables.insert(pair.first);
+        std::cout << "pair.first->name " << *(pair.first->name) << std::endl;
+        variables->insert(pair.first);
     }
     return variables;
 }
 
-VariableSet SimpleEvent::merge_variables(const VariableSet &other) const {
-    VariableSet variables;
-    for (auto const &variable: get_variables()) {
-        variables.insert(variable);
+VariableSetPtr_t SimpleEvent::merge_variables(const VariableSetPtr_t &other) const {
+    VariableSetPtr_t variables = make_shared_variable_set();
+    auto vari = get_variables();
+    for (auto const &variable: *vari) {
+        std::cout << "variable->name " << *variable->name << std::endl;
+        variables->insert(variable);
     }
-    for (auto const &variable: other) {
-        variables.insert(variable);
+    for (auto const &variable: *other) {
+        variables->insert(variable);
     }
     return variables;
 }
 
-SimpleEvent::SimpleEvent(VariableMapPtr_t variable_map) {
+SimpleEvent::SimpleEvent(VariableMapPtr_t &variable_map) {
     this->variable_map = variable_map;
 }
 
@@ -65,14 +86,22 @@ SimpleSetSetPtr_t SimpleEvent::complement() {
 
         // initialize current complement
         auto current_complement = make_shared_simple_event();
-        auto complement_of_current_variable = assignment->complement();
-        current_complement->variable_map->insert({variable, complement_of_current_variable});
+        auto variable_map_new = std::make_shared<VariableMap>();
+        (*variable_map_new)[variable] = assignment->complement();
+        current_complement->variable_map = variable_map_new;
 
-        for (auto const &other_variable: get_variables()) {
+        auto vari = get_variables();
+        for (auto const &other_variable: *vari) {
+            if (other_variable == variable) {
+                continue;
+            }
             if (processed_variables.find(other_variable) == processed_variables.end()) {
-                current_complement->variable_map->insert({other_variable, variable_map->at(other_variable)});
-            } else {
-                current_complement->variable_map->insert({other_variable, other_variable->get_domain()});
+                (*variable_map_new)[other_variable] = other_variable->get_domain();
+                current_complement->variable_map = variable_map_new;
+            }
+            else {
+                (*variable_map_new)[other_variable] = (*variable_map)[other_variable];
+                current_complement->variable_map = variable_map_new;
             }
         }
 
@@ -128,7 +157,7 @@ bool SimpleEvent::operator==(const CPPAbstractSimpleSet &other) {
     auto derived_other = (SimpleEvent *) &other;
     auto own_variables = get_variables();
     auto other_variables = derived_other->get_variables();
-    if (own_variables != other_variables) {
+    if (*own_variables != *other_variables) {
         return false;
     }
     for (auto const &[variable, assignment]: *variable_map) {
@@ -159,9 +188,9 @@ bool SimpleEvent::operator<=(const CPPAbstractSimpleSet &other) {
     return false;
 }
 
-SimpleEvent::SimpleEvent(const VariableSet &variables) {
+SimpleEvent::SimpleEvent(const VariableSetPtr_t &variables) {
     variable_map = std::make_shared<VariableMap>();
-    for (auto const &variable: variables) {
+    for (auto const &variable: *variables) {
         variable_map->insert({variable, variable->get_domain()});
     }
 }
@@ -176,13 +205,13 @@ Event::Event() {
 
 Event::Event(const SimpleSetSetPtr_t &simple_events) {
     simple_sets = simple_events;
-    all_variables = make_variable_set(get_variables_from_simple_events());
+    all_variables = make_shared_variable_set(get_variables_from_simple_events());
 }
 
 Event::Event(const SimpleEventPtr_t &simple_event) {
     simple_sets = make_shared_simple_set_set();
     simple_sets->insert(simple_event);
-    all_variables = make_variable_set(simple_event->get_variables());
+    all_variables = make_shared_variable_set(*(simple_event->get_variables()));
 }
 
 
@@ -195,7 +224,8 @@ VariableSet Event::get_variables_from_simple_events() const {
     auto result = VariableSet();
     for (auto const &simple_event: *simple_sets) {
         auto casted = (SimpleEvent *) simple_event.get();
-        for (auto const &variable: casted->get_variables()) {
+        auto variables = casted->get_variables();
+        for (auto const &variable: *variables) {
             result.insert(variable);
         }
     }
@@ -252,7 +282,8 @@ std::tuple<EventPtr_t, bool> Event::simplify_once() {
             }
 
             // convert to simple event
-            auto new_simple_event = make_shared_simple_event(std::make_shared<VariableMap>(new_variable_map));
+            auto var_map = std::make_shared<VariableMap>(new_variable_map);
+            auto new_simple_event = make_shared_simple_event(var_map);
 
             // create new composite event
             result->simple_sets->insert(new_simple_event);

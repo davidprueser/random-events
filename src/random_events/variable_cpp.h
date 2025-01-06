@@ -4,8 +4,8 @@
 #include "sigma_algebra_cpp.h"
 #include "interval_cpp.h"
 #include "set_cpp.h"
+#include <iostream>
 
-using CPPSetPtr_t = std::shared_ptr<CPPSet>;
 using NamePtr_t = std::shared_ptr<std::string>;
 
 
@@ -16,6 +16,10 @@ public:
     NamePtr_t name;
 
     virtual CPPAbstractCompositeSetPtr_t get_domain() const = 0;
+
+    const std::type_info& get_type() const {
+        return typeid(*this);
+    }
 
     bool operator==(const AbstractVariable &other) const {
         return *this->name == *other.name;
@@ -47,6 +51,7 @@ public:
 
 };
 
+using AbstractVariablePtr_t = std::shared_ptr<AbstractVariable>;
 
 class Symbolic : public AbstractVariable {
 public:
@@ -62,16 +67,6 @@ public:
         this->domain = domain;
     }
 
-//    Symbolic(const NamePtr_t& name, const int all_set_elements_length) {
-//        this->name = name;
-//        auto domain_ = make_shared_set(all_set_elements);
-////        for (const auto& element: *all_set_elements) {
-////            auto set_element = make_shared_set_element(element);
-////            domain_->simple_sets->insert(set_element);
-////        }
-//        this->domain = domain_;
-//    }
-//
     CPPAbstractCompositeSetPtr_t get_domain() const override {
         return domain;
     }

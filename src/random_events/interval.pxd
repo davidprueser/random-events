@@ -32,8 +32,6 @@ cdef class SimpleInterval(AbstractSimpleSet):
 cdef class Interval(AbstractCompositeSet):
     cdef AbstractSimpleSet from_cpp_simple_set(self, CPPAbstractSimpleSetPtr_t simple_set)
 
-    cdef const CPPAbstractCompositeSetPtr_t as_cpp_composite_set(self)
-
     cdef AbstractCompositeSet from_cpp_composite_set(self, CPPAbstractCompositeSetPtr_t composite_set)
 
     cpdef AbstractCompositeSet simplify(self)

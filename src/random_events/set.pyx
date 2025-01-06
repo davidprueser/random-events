@@ -1,9 +1,8 @@
+# distutils: language = c++
+
 from __future__ import annotations
 import enum
 import functools
-from pickle import EMPTY_SET
-
-import cython
 from sortedcontainers import SortedSet
 from typing_extensions import Self, TYPE_CHECKING, Dict, Any, Type
 
@@ -17,21 +16,19 @@ cdef class SetElement(AbstractSimpleSet):
     """
 
     def __init__(self, element, all_elements):
+        self.all_elements = SortedSet(all_elements)
         if element == EMPTY_SET_SYMBOL or element == -1:
             self.element = EMPTY_SET_SYMBOL
-            self.all_elements = set()
-        elif element not in all_elements:
-            raise ValueError(f"Element {element} not in all elements {all_elements}")
+        elif element not in self.all_elements:
+            raise ValueError(f"Element {element} not in all elements {self.all_elements}")
         else:
-            self.all_elements = SortedSet(all_elements)
             self.element = element
             self.index = self.all_elements.index(self.element)
             self.length = len(self.all_elements)
-            self.cpp_set_element_object = new CPPSetElement(self.index, self.length)
+            self.cpp_set_element_object = new CPPSetElement(self.index, make_shared[int](self.length))
             self.cpp_object = self.cpp_set_element_object
 
         self.json_serializer = SetElementJSON(self)
-
 
     def __hash__(self):
         return hash((self.element, tuple(self.all_elements)))
@@ -91,13 +88,18 @@ cdef class Set(AbstractCompositeSet):
         self.cpp_object = new CPPSet()
 
         cdef SetElement simple_set
-        if self.simple_sets is not None:
-            for simple_set in self.simple_sets:
-                self.cpp_object.simple_sets.get().insert(shared_ptr[CPPAbstractSimpleSet](simple_set.cpp_set_element_object))
+        for simple_set in self.simple_sets:
+            self.cpp_object.simple_sets.get().insert(shared_ptr[CPPAbstractSimpleSet](simple_set.cpp_set_element_object))
+
+    def __getitem__(self, item):
+        return self.simple_sets[item]
 
     cdef AbstractSimpleSet from_cpp_simple_set(self, CPPAbstractSimpleSetPtr_t simple_set):
-        cdef CPPSetElement * cpp_set = <CPPSetElement *> simple_set.get()
-        return SetElement(self.simple_sets[0].all_elements[cpp_set.element_index], self.simple_sets[0].all_elements)
+        cpp_set_element = <CPPSetElement *> simple_set.get()
+        if cpp_set_element.element_index == -1:
+            return SetElement(EMPTY_SET_SYMBOL, set())
+        new_set_element = SetElement(self[0].all_elements[cpp_set_element.element_index], self[0].all_elements)
+        return new_set_element
 
     cdef AbstractCompositeSet from_cpp_composite_set(self, CPPAbstractCompositeSetPtr_t composite_set):
         cdef CPPSet * cpp_set = <CPPSet *> composite_set.get()
@@ -116,8 +118,12 @@ cdef class Set(AbstractCompositeSet):
     cpdef Set make_disjoint(self):
         return self
 
+    # cpdef bint contains(self, item):
+
+
     cpdef to_json(self):
         return self.json_serializer.to_json()
+
 
 class SetJSON(AbstractCompositeSetJSON):
     def __init__(self, composite_set: Set):

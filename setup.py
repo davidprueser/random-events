@@ -73,8 +73,10 @@ extensions = [
         language='c++',
         include_dirs=[src_dir],  # Same here for headers
         extra_objects=[os.path.join(root_dir, 'build', 'lib.linux-x86_64-cpython-39', 'random_events',
-                                    'sigma_algebra.cpython-39-x86_64-linux-gnu.so')]
-    )
+                                    'sigma_algebra.cpython-39-x86_64-linux-gnu.so'),
+                       os.path.join(root_dir, 'build', 'lib.linux-x86_64-cpython-39', 'random_events',
+                                    'interval.cpython-39-x86_64-linux-gnu.so')],  # Ensure sigma_algebra is built first
+)
 ]
 
 # Build the extensions

@@ -15,7 +15,6 @@ class AbstractVariable;
 
 
 // TYPEDEFS
-using AbstractVariablePtr_t = std::shared_ptr<AbstractVariable>;
 using VariableMap = std::map<AbstractVariablePtr_t, CPPAbstractCompositeSetPtr_t>;
 using VariableMapPtr_t = std::shared_ptr<VariableMap>;
 using SimpleEventPtr_t = std::shared_ptr<SimpleEvent>;
@@ -34,28 +33,30 @@ EventPtr_t make_shared_event(Args &&... args) {
 }
 
 template<typename... Args>
-VariableSetPtr_t make_variable_set(Args &&... args) {
+VariableSetPtr_t make_shared_variable_set(Args &&... args) {
     return std::make_shared<VariableSet>(std::forward<Args>(args)...);
 }
 
 
 class SimpleEvent : public CPPAbstractSimpleSet {
 public:
+    VariableMapPtr_t variable_map;
+
     SimpleEvent();
 
-    explicit SimpleEvent(VariableMapPtr_t variable_map);
+    ~SimpleEvent() override;
+
+    explicit SimpleEvent(VariableMapPtr_t &variable_map);
 
     /**
      * Create a Simple Event where every variable is assigned to its domain.
      * @param variables
      */
-    explicit SimpleEvent(const VariableSet &variables);
+    explicit SimpleEvent(const VariableSetPtr_t &variables);
 
-    VariableMapPtr_t variable_map;
+    VariableSetPtr_t get_variables() const;
 
-    VariableSet get_variables() const;
-
-    VariableSet merge_variables(const VariableSet &other) const;
+    VariableSetPtr_t merge_variables(const VariableSetPtr_t &other) const;
 
 
     CPPAbstractSimpleSetPtr_t intersection_with(const CPPAbstractSimpleSetPtr_t &other) override;

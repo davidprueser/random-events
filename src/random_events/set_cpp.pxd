@@ -7,20 +7,17 @@ from libcpp cimport bool
 
 cdef extern from "set_cpp.h":
 
-    ctypedef set[int] CPPAllSetElements_t
-    ctypedef shared_ptr[CPPAllSetElements_t] CPPAllSetElementsPtr_t
+    ctypedef shared_ptr[int] CPPAllSetElementsPtr_t
     ctypedef shared_ptr[CPPSetElement] CPPSetElementPtr_t
 
     ctypedef shared_ptr[CPPSet] CPPSetPtr_t
 
     cdef cppclass CPPSetElement(CPPAbstractSimpleSet):
         int element_index;
-        int all_elements_length;
+        CPPAllSetElementsPtr_t all_elements_length;
 
         CPPSetElement()
-
-        CPPSetElement(int element_index, int all_elements_index);
-
+        CPPSetElement(int element_index, const CPPAllSetElementsPtr_t &all_elements_length);
 
         CPPAbstractSimpleSetPtr_t intersection_with(const CPPAbstractSimpleSetPtr_t &other);
 
@@ -41,10 +38,12 @@ cdef extern from "set_cpp.h":
 
 
     cdef cppclass CPPSet(CPPAbstractCompositeSet):
+        CPPAllSetElementsPtr_t all_elements;
+
         CPPSet()
-        CPPSet(const SimpleSetSetPtr_t &simple_sets_)
-        CPPSet(SimpleSetSetPtr_t &simple_sets_)
-        CPPSet(CPPSetElement &set_element)
+        CPPSet(const CPPAllSetElementsPtr_t &all_elements_)
+        CPPSet(const SimpleSetSetPtr_t &simple_sets_, const CPPAllSetElementsPtr_t &all_elements_)
+        CPPSet(const CPPSetElementPtr_t &set_element, const CPPAllSetElementsPtr_t &all_elements_)
 
         CPPAbstractCompositeSetPtr_t simplify()
 

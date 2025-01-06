@@ -1,6 +1,6 @@
 from random_events.sigma_algebra cimport AbstractSimpleSet, AbstractCompositeSet
 from random_events.sigma_algebra_cpp cimport CPPAbstractSimpleSetPtr_t, CPPAbstractSimpleSet, CPPAbstractCompositeSetPtr_t, CPPAbstractCompositeSet, SimpleSetSetPtr_t
-from random_events.set_cpp cimport CPPSetElement, CPPAllSetElementsPtr_t, CPPSetElementPtr_t, CPPAllSetElements_t, CPPSet
+from random_events.set_cpp cimport CPPSetElement, CPPAllSetElementsPtr_t, CPPSetElementPtr_t, CPPSet
 from libcpp.memory cimport shared_ptr, make_shared
 
 cdef class SetElement(AbstractSimpleSet):
@@ -12,7 +12,7 @@ cdef class SetElement(AbstractSimpleSet):
 
     cdef AbstractSimpleSet from_cpp_simple_set(self, CPPAbstractSimpleSetPtr_t simple_set)
 
-    cpdef bint contains(self, item)
+    cpdef bint contains(self, item) except *
 
     cpdef bint is_empty(self)
 

@@ -12,16 +12,19 @@ class CPPSet;
 
 
 // TYPEDEFS
-typedef std::set<int> CPPAllSetElements_t;
-using CPPAllSetElementsPtr_t = std::shared_ptr<CPPAllSetElements_t>;
+using CPPAllSetElementsPtr_t = std::shared_ptr<int>;
 using CPPSetElementPtr_t = std::shared_ptr<CPPSetElement>;
+using CPPSetPtr_t = std::shared_ptr<CPPSet>;
+
+template<typename... Args>
+CPPAllSetElementsPtr_t make_shared_all_elements(Args &&... args) {
+    return std::make_shared<int>(std::forward<Args>(args)...);
+}
 
 template<typename... Args>
 CPPSetElementPtr_t make_shared_set_element(Args &&... args) {
     return std::make_shared<CPPSetElement>(std::forward<Args>(args)...);
 }
-
-typedef std::shared_ptr<CPPSet> CPPSetPtr_t;
 
 template<typename... Args>
 CPPSetPtr_t make_shared_set(Args &&... args) {
@@ -38,15 +41,15 @@ public:
     int element_index;
 
     /**
-     * The set of all possible strings
+     * The length of the set of all elements defined in the python object.
      */
-    int all_elements_length;
+    CPPAllSetElementsPtr_t all_elements_length;
 
 
 
-    explicit CPPSetElement(const int all_elements_index);
+    explicit CPPSetElement(const CPPAllSetElementsPtr_t &all_elements_length);
 
-    CPPSetElement(int element_index, int all_elements_index);
+    CPPSetElement(int element_index, const CPPAllSetElementsPtr_t &all_elements_length);
 
     ~CPPSetElement() override;
 
@@ -101,17 +104,17 @@ public:
 class CPPSet : public CPPAbstractCompositeSet {
 public:
 
-    int all_elements_length;
+    CPPAllSetElementsPtr_t all_elements_length;
 
     CPPSet(){
         this->simple_sets = make_shared_simple_set_set();
     }
 
-    explicit CPPSet(const int all_elements_length);
+    explicit CPPSet(const CPPAllSetElementsPtr_t &all_elements_length);
 
-    CPPSet(const CPPSetElementPtr_t& element_, const int all_elements_length);
+    CPPSet(const CPPSetElementPtr_t& element_, const CPPAllSetElementsPtr_t &all_elements_length);
 
-    CPPSet(const SimpleSetSetPtr_t& elements, const int all_elements_length);
+    CPPSet(const SimpleSetSetPtr_t& elements, const CPPAllSetElementsPtr_t &all_elements_length);
 
     ~CPPSet() override;
 
